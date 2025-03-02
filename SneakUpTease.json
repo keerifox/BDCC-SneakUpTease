@@ -1,0 +1,8 @@
+{
+    "name": "SneakUpTease",
+    "description": "This mod adds an alternate interaction upon meeting a guard, engineer or a nurse in an off-limits cell. In this diverging outcome, the trespassing inmate is not immediately detected, and is presented with an opportunity to sneak up on staff. Occasionally, while exploring the space prison, you may also find yourself on the receiving end of this encounter.",
+    "author": "keerifox",
+    "repository": "https://github.com/keerifox/BDCC-SneakUpTease",
+    "modversion": "0.3.0",
+    "gameversion": "0.1.7"
+}
