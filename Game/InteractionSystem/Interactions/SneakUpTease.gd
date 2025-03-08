@@ -2148,6 +2148,24 @@ func getPreviewLineForRole(_role:String) -> String:
 
 	return .getPreviewLineForRole(_role)
 
+func stopMe():
+	var sub = getRoleChar("sub")
+
+	if( sub.isPlayer() ):
+		var state = getState()
+
+		var cooldownMultiplier = 0.80
+		if( state in ["escaped"] ):
+			cooldownMultiplier = 0.60
+		elif( state in ["immediately_broke_free"] ):
+			cooldownMultiplier = 0.40
+
+		GlobalRegistry.getModule("SneakUpTeaseModule").onSneakUpEncounterEarlyExit({
+			cooldownMultiplier = cooldownMultiplier,
+		})
+
+	return .stopMe()
+
 func saveData():
 	var data = .saveData()
 
