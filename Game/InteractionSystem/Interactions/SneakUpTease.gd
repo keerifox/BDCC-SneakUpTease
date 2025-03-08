@@ -566,6 +566,7 @@ func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Di
 			subConsentedToAnalSexReceiving = subConsentedToAnalSexReceiving,
 			subConsentedToAnalSexGiving = subConsentedToAnalSexGiving,
 			subWasPinnedToTheGround = subWasPinnedToTheGround,
+			subWasUndressed = subWasUndressed,
 			subPetNames = subPetNames,
 		})
 	elif(_id == "undress_both"):

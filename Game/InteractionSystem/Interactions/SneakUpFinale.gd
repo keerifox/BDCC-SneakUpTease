@@ -3,6 +3,7 @@ extends PawnInteractionBase
 var subConsentedToAnalSexReceiving:bool = false
 var subConsentedToAnalSexGiving:bool = false
 var subWasPinnedToTheGround:bool = false
+var subWasUndressed:bool = false
 var subWasCuffed:bool = false
 var subMightEndSexEarly:bool = false
 var subPetNames:Array = ["creature"]
@@ -12,6 +13,7 @@ var domHasImmediatelyLeftConsentingSub:bool = false
 var domToggleableMouthPlayActiveTurns:int = 0
 var domCuddlesLastedTurns:int = 0
 var domMessyKissingLastedTurns:int = 0
+var domLeashedWalkOnAllFours:bool = false
 var domLeashedWalkHelpedSubStand:bool = false
 var domLeashedWalkStoodStill:bool = false
 var domLeashedWalkReachedTargetLoc:bool = false
@@ -182,6 +184,8 @@ func start(_pawns:Dictionary, _args:Dictionary):
 		subConsentedToAnalSexGiving = true
 	if( _args.has("subWasPinnedToTheGround") && _args["subWasPinnedToTheGround"] ):
 		subWasPinnedToTheGround = true
+	if( _args.has("subWasUndressed") && _args["subWasUndressed"] ):
+		subWasUndressed = true
 	if( _args.has("subPetNames") ):
 		subPetNames = _args["subPetNames"]
 
@@ -767,7 +771,7 @@ func dom_choosing_parting_action_do(_id:String, _args:Dictionary, _context:Dicti
 		setState("dom_cuffed_guard_sub", "dom")
 	elif(_id == "leash_walk_sub"):
 		if( sub.getInventory().hasEquippedItemWithTag(ItemTag.AllowsEnslaving) ):
-			setState("dom_leash_walking_sub", "dom")
+			setState("dom_choosing_leash_walking_variant", "dom")
 		else:
 			setState("dom_confirming_whether_to_collar_sub", "dom")
 	elif(_id == "cancel"):
@@ -1051,10 +1055,39 @@ func dom_forced_collar_on_sub_text():
 
 func dom_forced_collar_on_sub_do(_id:String, _args:Dictionary, _context:Dictionary):
 	if(_id == "continue"):
+		setState("dom_choosing_leash_walking_variant", "dom")
+
+
+func dom_choosing_leash_walking_variant_text():
+	var sub = getRoleChar("sub")
+
+	saynn( RNG.pick([
+		"{dom.You} {dom.youVerb('prepare')} the leash, briefly fidgeting its clip around {dom.yourHis} digits while deliberating on the details.",
+	]) )
+
+	var subWasUndressedOrIsNaked = ( subWasUndressed || sub.isFullyNaked() )
+
+	var ACTION_NAME_ON_ALL_FOURS = "On all fours"
+	if( subWasUndressedOrIsNaked && !sub.hasBoundArms() ):
+		addAction("all_fours", ACTION_NAME_ON_ALL_FOURS, "Make them crawl on all fours like a good pet.", "default", 0.6, 60, {})
+	elif(!subWasUndressedOrIsNaked):
+		addDisabledAction(ACTION_NAME_ON_ALL_FOURS, "They must be naked to make them crawl on all fours.")
+	else:
+		addDisabledAction(ACTION_NAME_ON_ALL_FOURS, "Restraints on their arms are preventing them from crawling on all fours.")
+
+	addAction("on_two_feet", "On two feet", "Walk them on their two feet.", "default", 0.4, 60, {})
+
+func dom_choosing_leash_walking_variant_do(_id:String, _args:Dictionary, _context:Dictionary):
+	if(_id == "all_fours"):
+		domLeashedWalkOnAllFours = true
+		setState("dom_leash_walking_sub", "dom")
+	elif(_id == "on_two_feet"):
+		domLeashedWalkOnAllFours = false
 		setState("dom_leash_walking_sub", "dom")
 
 
 func dom_leash_walking_sub_text():
+	var dom = getRoleChar("dom")
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
 
@@ -1063,6 +1096,12 @@ func dom_leash_walking_sub_text():
 
 	var subPersonalitySubbyScore = subPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
 	var subIsSubby = subPersonalitySubbyScore > 0.4
+	var subIsDommy = subPersonalitySubbyScore < -0.4
+
+	var subPersonalityImpatientScore = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
+	var subIsImpatient = subPersonalityImpatientScore > 0.4
+
+	var sub_obediently = RNG.pick(["obediently", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
 
 	var domRoomID:String = domPawn.getLocation()
 	# var domRoom = GM.world.getRoomByID(domRoomID)
@@ -1078,19 +1117,50 @@ func dom_leash_walking_sub_text():
 			saynn( RNG.pick([
 				"As {sub.you} {sub.youVerb('lay')} helplessly, {dom.you} {dom.youVerb('attach', 'attaches')} a leash to your collar.",
 			]) )
+
+			possible = getDialogueLines_attachedLeashForWalk(dom)
+			saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
 		else:
 			saynn( RNG.pick([
 				"{dom.You} {dom.youVerb('lean')} forward and {dom.youVerb('attach', 'attaches')} a leash to {sub.your} collar.",
 			]) )
+
+			if(domLeashedWalkOnAllFours):
+				possible = getDialogueLines_commandOnAllFoursForLeashedWalk(dom)
+				saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+
+				saynn( RNG.pick([
+					"{sub.You} "+ sub_obediently +" {sub.youVerb('get')} on {sub.yourHis} knees, then on {sub.yourHis} four paws, awaiting what comes next.",
+					"{sub.You} {sub.youVerb('lower')} {sub.yourself} to {sub.yourHis} knees, "+ sub_obediently +" bending forward and getting on all fours.",
+				]) )
+			else:
+				possible = getDialogueLines_attachedLeashForWalk(dom)
+				saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
 	elif(domLeashedWalkReachedTargetLoc):
 		saynn( RNG.pick([
 			"{dom.You} {dom.youVerb('make')} a brief stop, still holding {sub.you} on a leash.",
 		]) )
 	elif(domLeashedWalkStoodStill):
+		var sub_patiently = "patiently" if(!subIsImpatient) else "impatiently"
+
 		saynn( RNG.pick([
-			"{sub.You} {sub.youVerb('stand')} still as {dom.you} {dom.youVerb('hold')} {sub.youHim} on a leash.",
+			"{sub.You} "+ ( "{sub.youVerb('remain')} standing on all fours" if(domLeashedWalkOnAllFours) else "{sub.youVerb('stand')} still" ) +" as {dom.you} {dom.youVerb('hold')} {sub.youHim} on a leash.",
+			"{sub.You} "+ ( "{sub.youVerb('endure')} standing on all fours" if(domLeashedWalkOnAllFours) else ( "{sub.youVerb('wait')} "+ sub_patiently ) ) +" as {dom.you} {dom.youVerb('keep')} hold of {sub.yourHis} leash.",
 		]) )
-	else:
+	elif(domLeashedWalkOnAllFours):
+		possible.append_array([
+			"{sub.You} {sub.youAre} being pulled around, crawling on all fours as {dom.you} {dom.youVerb('hold')} power over {sub.youHim}.",
+			"{sub.You} {sub.youAre} forced to traverse the area, crawling on all fours right next to {dom.your} hind paws.",
+			"{sub.You} {sub.youVerb('have', 'has')} no choice but to crawl behind {dom.you} on all fours, as {dom.youHe} {dom.youVerb('pull')} {sub.yourHis} leash forward.",
+		])
+
+		if( RNG.chance(5) ):
+			possible.append_array([
+				"{sub.Your} "+ RNG.pick(["arms", "knees"]) +" feel a little exhausted, and {sub.youHe} {sub.youVerb('struggle')} to keep up with the pace. A pull of {sub.yourHis} leash urges {sub.youHim} to catch up.",
+			])
+
+		saynn( RNG.pick(possible) )
+	elif(!domLeashedWalkOnAllFours):
 		possible.append_array([
 			"{sub.You} {sub.youAre} being pulled around by {dom.you} as {dom.youHe} {dom.youVerb('hold')} {sub.youHim} on a leash.",
 			"{sub.You} {sub.youAre} forced to traverse the area while {dom.you} {dom.youVerb('have', 'has')} {sub.youHim} on the leash.",
@@ -1143,7 +1213,7 @@ func dom_leash_walking_sub_text():
 			if( !subIsMean && RNG.chance(20) ):
 				saynn("{sub.You} {sub.youVerb('whine')}.")
 
-	if(subWasPinnedToTheGround):
+	if(subWasPinnedToTheGround && !domLeashedWalkOnAllFours):
 		addAction("help_stand", "Help them up", "Get them to stand.", "default", 1.0, 60, {})
 	else:
 		if(domLeashedWalkTraversedCellsCount == 0):
@@ -1378,16 +1448,22 @@ func getAnimData() -> Array:
 	if( getState() == "dom_stopped_leash_walking_sub" ):
 		return [StageScene.Duo, "stand", { pc="dom", npc="sub" }]
 
+	if( getState() == "dom_choosing_leash_walking_variant" ):
+		if(subWasPinnedToTheGround):
+			return [StageScene.SexBehind, "tease", { pc="dom", npc="sub" }]
+		else:
+			return [StageScene.Duo, "stand", { pc="sub", npc="dom" }]
+
 	if( getState() == "dom_leash_walking_sub" ):
 		if(domLeashedWalkTraversedCellsCount == 0):
 			if(subWasPinnedToTheGround):
 				return [StageScene.SexBehind, "tease", { pc="dom", npc="sub", npcBodyState={ leashedBy="dom" } }]
 			else:
-				return [StageScene.Duo, "stand", { pc="sub", npc="dom", bodyState={ leashedBy="dom" } }]
+				return [StageScene.Duo, ( "allfours" if(domLeashedWalkOnAllFours) else "stand" ), { pc="sub", npc="dom", bodyState={ leashedBy="dom" } }]
 		elif(domLeashedWalkStoodStill):
-			return [StageScene.Duo, "stand", { pc="sub", npc="dom", flipNPC=true, bodyState={ leashedBy="dom" } }]
+			return [StageScene.Duo, ( "allfours" if(domLeashedWalkOnAllFours) else "stand" ), { pc="sub", npc="dom", flipNPC=true, bodyState={ leashedBy="dom" } }]
 		else:
-			return [StageScene.Duo, "walk", { pc="sub", npc="dom", npcAction="walk", flipNPC=true, bodyState={ leashedBy="dom" } }]
+			return [StageScene.Duo, ( "crawl" if(domLeashedWalkOnAllFours) else "walk" ), { pc="sub", npc="dom", npcAction="walk", flipNPC=true, bodyState={ leashedBy="dom" } }]
 
 	var currentSexPose = getCurrentSexPose()
 
@@ -1529,6 +1605,7 @@ func saveData():
 	data["subConsentedToAnalSexReceiving"] = subConsentedToAnalSexReceiving
 	data["subConsentedToAnalSexGiving"] = subConsentedToAnalSexGiving
 	data["subWasPinnedToTheGround"] = subWasPinnedToTheGround
+	data["subWasUndressed"] = subWasUndressed
 	data["subWasCuffed"] = subWasCuffed
 	data["subMightEndSexEarly"] = subMightEndSexEarly
 	data["subPetNames"] = subPetNames
@@ -1538,6 +1615,7 @@ func saveData():
 	data["domToggleableMouthPlayActiveTurns"] = domToggleableMouthPlayActiveTurns
 	data["domCuddlesLastedTurns"] = domCuddlesLastedTurns
 	data["domMessyKissingLastedTurns"] = domMessyKissingLastedTurns
+	data["domLeashedWalkOnAllFours"] = domLeashedWalkOnAllFours
 	data["domLeashedWalkHelpedSubStand"] = domLeashedWalkHelpedSubStand
 	data["domLeashedWalkStoodStill"] = domLeashedWalkStoodStill
 	data["domLeashedWalkReachedTargetLoc"] = domLeashedWalkReachedTargetLoc
@@ -1564,6 +1642,7 @@ func loadData(_data):
 	subConsentedToAnalSexReceiving = SAVE.loadVar(_data, "subConsentedToAnalSexReceiving", false)
 	subConsentedToAnalSexGiving = SAVE.loadVar(_data, "subConsentedToAnalSexGiving", false)
 	subWasPinnedToTheGround = SAVE.loadVar(_data, "subWasPinnedToTheGround", false)
+	subWasUndressed = SAVE.loadVar(_data, "subWasUndressed", false)
 	subMightEndSexEarly = SAVE.loadVar(_data, "subMightEndSexEarly", false)
 	subPetNames = SAVE.loadVar(_data, "subPetNames", ["creature"])
 
@@ -1572,6 +1651,7 @@ func loadData(_data):
 	domToggleableMouthPlayActiveTurns = SAVE.loadVar(_data, "domToggleableMouthPlayActiveTurns", 0)
 	domCuddlesLastedTurns = SAVE.loadVar(_data, "domCuddlesLastedTurns", 0)
 	domMessyKissingLastedTurns = SAVE.loadVar(_data, "domMessyKissingLastedTurns", 0)
+	domLeashedWalkOnAllFours = SAVE.loadVar(_data, "domLeashedWalkOnAllFours", false)
 	domLeashedWalkHelpedSubStand = SAVE.loadVar(_data, "domLeashedWalkHelpedSubStand", false)
 	domLeashedWalkStoodStill = SAVE.loadVar(_data, "domLeashedWalkStoodStill", false)
 	domLeashedWalkReachedTargetLoc = SAVE.loadVar(_data, "domLeashedWalkReachedTargetLoc", false)
@@ -2423,6 +2503,35 @@ func getDialogueLines_offerCuddles(_character:BaseCharacter, _characterRole:Stri
 	elif(_characterRole == "sub"):
 		dialogueLines.append_array([
 			"Would you like to hold me close for a little while?",
+		])
+
+	return dialogueLines
+
+func getDialogueLines_commandOnAllFoursForLeashedWalk(_character:BaseCharacter) -> Array:
+	var dialogueLines = [
+		"On all fours.",
+	]
+
+	return dialogueLines
+
+func getDialogueLines_attachedLeashForWalk(_character:BaseCharacter) -> Array:
+	var characterPawn = getRolePawn("dom")
+
+	var characterPersonalityMeanScore = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean = characterPersonalityMeanScore > 0.4
+
+	var dialogueLines = [
+		"You'll keep me company, pet.",
+	]
+
+	if(characterIsMean):
+		dialogueLines.append_array([
+			"What an obedient slut.",
+		])
+	else:
+		dialogueLines.append_array([
+			"You're mine now~",
+			"Everyone needs to see how good of a pet you are~",
 		])
 
 	return dialogueLines
