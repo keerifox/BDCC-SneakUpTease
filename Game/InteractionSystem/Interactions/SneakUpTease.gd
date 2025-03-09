@@ -123,12 +123,21 @@ func init_text():
 		post_dom_flirt_text()
 
 	if(subResistedTimes == 0):
-		var subHasStaminaToBreakFree = (sub.getStamina() >= SUB_STAMINA_COST_BREAK_FREE)
+		var breakFreeStrengthStatRequirement = max( 5, ceil( 0.40 * dom.getStat(Stat.Strength) ) )
+		var subHasStrengthStatToBreakFree = ( sub.getStat(Stat.Strength) >= breakFreeStrengthStatRequirement )
+		var subHasUnboundArmsAndUnblockedHands = ( !sub.hasBoundArms() && !sub.hasBlockedHands() )
+		var subHasStaminaToBreakFree = ( sub.getStamina() >= SUB_STAMINA_COST_BREAK_FREE )
 
-		if(subHasStaminaToBreakFree):
-			addActionWithChecks("immediately_break_free", "Break free", "You're more than capable of freeing yourself. Uses " + str(SUB_STAMINA_COST_BREAK_FREE) + " stamina.", "default", -0.01, 60, {}, [ButtonChecks.NotArmsRestrained, ButtonChecks.NotHandsBlocked, ButtonChecks.HasStamina, [ButtonChecks.StatCheck, Stat.Strength, 5]])
+		var ACTION_NAME_BREAK_FREE = "Break free"
+		var ACTION_DESC_PREFIX_BREAK_FREE = "[Strength "+ str(breakFreeStrengthStatRequirement) +"+] "
+		if(subHasStrengthStatToBreakFree && subHasUnboundArmsAndUnblockedHands && subHasStaminaToBreakFree):
+			addAction("immediately_break_free", ACTION_NAME_BREAK_FREE, ACTION_DESC_PREFIX_BREAK_FREE+ "You're more than capable of freeing yourself. Uses " + str(SUB_STAMINA_COST_BREAK_FREE) + " stamina.", "default", -0.01, 60, {})
+		elif(!subHasStrengthStatToBreakFree):
+			addDisabledAction(ACTION_NAME_BREAK_FREE, ACTION_DESC_PREFIX_BREAK_FREE+ "You lack strength to easily free yourself from their hold.")
+		elif(!subHasUnboundArmsAndUnblockedHands):
+			addDisabledAction(ACTION_NAME_BREAK_FREE, ACTION_DESC_PREFIX_BREAK_FREE+ "Restraints on your arms prevent you from breaking free.")
 		else:
-			addDisabledAction("Break free", "You need " + str(SUB_STAMINA_COST_BREAK_FREE) + " stamina to be able to break free.")
+			addDisabledAction(ACTION_NAME_BREAK_FREE, ACTION_DESC_PREFIX_BREAK_FREE+ "You need " + str(SUB_STAMINA_COST_BREAK_FREE) + " stamina to be able to break free.")
 
 	var subLustRatio = getSubLustRatio()
 	var subResistProbability = 4.0 - min(subLustRatio * 5.0, 3.5)
@@ -2231,14 +2240,6 @@ func loadData(_data):
 	domEasedGripOnce = SAVE.loadVar(_data, "domEasedGripOnce", false)
 	domWasUndressed = SAVE.loadVar(_data, "domWasUndressed", false)
 
-
-func addActionWithChecks(theid:String, name:String, desc:String, _scoreType:String, score, time:int, extraFields:Dictionary = {}, checks: Array = []) -> void:
-	var badCheck = ButtonChecks.check(checks)
-
-	if(badCheck == null):
-		addAction( theid, name, ButtonChecks.getPrefix(checks) + desc, _scoreType, score, time, extraFields )
-	else:
-		addDisabledAction( name, ButtonChecks.getReasonText(badCheck) )
 
 func getSensationColor(_type:String) -> String:
 	if(_type == "pain_severe"):
