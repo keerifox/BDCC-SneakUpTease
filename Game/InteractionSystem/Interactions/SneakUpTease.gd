@@ -22,6 +22,12 @@ var subStaminaRecovered:int = 0
 var subConsentedToUndressing:bool = false
 var subConsentedToAnalSexReceiving:bool = false
 var subConsentedToAnalSexGiving:bool = false
+var subIsTooFrightenedToEscape:bool = false
+var subWasHypnotizedIntoKneeling:bool = false
+var subWasHypnotizedIntoStandingStill:bool = false
+var subEscapeUponEaseGripProbability:float = 0.0
+var subIntendsToKneel:bool = false
+var subIntendsToStandStill:bool = false
 var subWasPinnedToTheGround:bool = false
 var subWasUndressed:bool = false
 
@@ -36,6 +42,7 @@ var domSpecialActionKeyLastUsed:String = "none"
 var domSpecialActionParamStrength:float = 0.0
 var domSpecialActionParamBodyPart:String = "none"
 var domEasedGripOnce:bool = false
+var domAttemptedToHypnotizeSubUponEaseGrip:bool = false
 var domWasUndressed:bool = false
 
 func _init():
@@ -550,6 +557,8 @@ func after_sub_resisted_or_softened_text():
 func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
+	var domPawn = getRolePawn("dom")
+	var subPawn = getRolePawn("sub")
 
 	if( sub.isPlayer() ):
 		# Clear stamina messages for PC sub, since they aren't cleared when choosing the default "Continue" action
@@ -615,6 +624,36 @@ func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Di
 		dom_special_bite_do()
 	elif(_id == "ease_grip"):
 		domEasedGripOnce = true
+
+		subEscapeUponEaseGripProbability = max( ( 1.0 - 2.0 * getSubLustRatio() ), -0.01 )
+		var subEscapeUponEaseGripProbabilityInverse:float = 1 - max(subEscapeUponEaseGripProbability, 0.0)
+
+		var subChanceToBeTooFrightenedToEscape:float = (
+				100.0
+			* (
+					subPawn.scorePersonalityMax({ PersonalityStat.Coward: 0.4 })
+				+ domPawn.scorePersonalityMax({ PersonalityStat.Mean: 0.2 })
+			)
+		)
+
+		subIsTooFrightenedToEscape = RNG.chance(subChanceToBeTooFrightenedToEscape)
+
+		var subForcedObedienceRatio:float = clamp( sub.getForcedObedienceLevel(), 0.0, 1.0 )
+
+		if(subForcedObedienceRatio > 0.25):
+			domAttemptedToHypnotizeSubUponEaseGrip = true
+
+			if(subIsTooFrightenedToEscape):
+				subWasHypnotizedIntoKneeling = RNG.chance(60 * subForcedObedienceRatio)
+
+				if( !subWasHypnotizedIntoKneeling && !sub.isPlayer() ):
+					subIntendsToKneel = RNG.chance(subEscapeUponEaseGripProbabilityInverse * 100.0)
+			else:
+				subWasHypnotizedIntoStandingStill = RNG.chance(80 * subForcedObedienceRatio)
+
+				if( !subWasHypnotizedIntoStandingStill && !sub.isPlayer() ):
+					subIntendsToStandStill = RNG.chance(subEscapeUponEaseGripProbabilityInverse * 100.0)
+
 		setState("eased_grip", "sub")
 	elif(_id == "just_leave"):
 		setState("left_laying_down", "sub")
@@ -1293,38 +1332,129 @@ func pinned_after_resisting_too_much_do(_id:String, _args:Dictionary, _context:D
 
 
 func eased_grip_text():
-	var domPawn = getRolePawn("dom")
-	var subPawn = getRolePawn("sub")
+	var sub = getRoleChar("sub")
+
+	var subStandInFearProbability = 1.0
+	var subKneelScoreType = "agreeSexAsSub"
+	var subKneelProbability = 1.0
+
+	var subEscapeProbability = subEscapeUponEaseGripProbability
+	var subEscapeProbabilityInverse:float = 1 - max(subEscapeProbability, 0.0)
+
+	var possible = []
 
 	saynn("{dom.You} {dom.youVerb('ease')} {dom.yourHis} grip on {sub.your} wrists, now just barely touching them in a playful manner. There's no longer anything that prevents {sub.you} from escaping.")
 
-	var chanceToBeTooFrightenedTooEscape = (
-			100.0
-		* (
-				subPawn.scorePersonalityMax({ PersonalityStat.Coward: 0.4 })
-			+ domPawn.scorePersonalityMax({ PersonalityStat.Mean: 0.2 })
-		)
-	)
+	if(domAttemptedToHypnotizeSubUponEaseGrip):
+		if(subIsTooFrightenedToEscape):
+			possible = [
+				"Submit to me.",
+				"Surrender yourself to me.",
+			]
 
-	var isTooFrightenedTooEscape = RNG.chance(chanceToBeTooFrightenedTooEscape)
+			saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
 
-	if(isTooFrightenedTooEscape):
-		addDisabledAction("Escape", "You are too frightened to move.")
-		addAction("stand_frightened", "Stand in fear", "That's about all you can do..", "default", 1.0, 60, {})
-		addAction("kneel", "Kneel", "Set your fear aside and get on your knees.", "agreeSexAsSub", 1.0, 30, {})
+			if(subWasHypnotizedIntoKneeling):
+				possible = [
+					"I will submit..",
+					"Y- Yes.. I will get on my knees..",
+					"I'll do what you want..",
+					"The spirals.. are so mesmerizing.. I'm.. all yours..",
+					"Everything.. is overflowing with colors.. I- I'm.. a fucktoy?..",
+				]
+
+				if( RNG.chance(5) ):
+					possible.append_array([
+						"Hah, good try. Wait.. W- What is- Knees, hello??",
+					])
+
+				saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+			elif( !sub.isPlayer() ):
+				if(subIntendsToKneel):
+					subKneelScoreType = "default"
+					subKneelProbability = 1.0
+					subStandInFearProbability = -0.01
+
+					possible = [
+						"You don't have to cast your spells on me, I.. was already going to submit..",
+						"F- Fuck, hearing you say that.. makes me want to obey out of my own will.. what's left of it..",
+						"I can still.. resist your influence, but.. that offer sounds hot..",
+					]
+
+					saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+				else:
+					subStandInFearProbability = 1.0
+					subKneelScoreType = "default"
+					subKneelProbability = -0.01
+
+					possible = [
+						"I.. will not..",
+						"Not.. to the likes.. of you..",
+						"Not.. even going to look into my eyes?",
+					]
+
+					saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+		else:
+			possible = [
+				"Stay.",
+			]
+
+			saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
+
+			if(subWasHypnotizedIntoStandingStill):
+				possible = [
+					"I.. will stay..",
+					"I.. shouldn't leave..",
+					"This.. won't magically make me want to stay.. H- Huh.. Stay.. That sounds.. comfortable..",
+					"I.. cannot refuse..",
+				]
+
+				saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+			elif( !sub.isPlayer() ):
+				if(subIntendsToStandStill):
+					subEscapeProbabilityInverse = 1.00
+					subEscapeProbability = -0.01
+
+					possible = [
+						"Somehow, that.. doesn't have an effect on me. But I wasn't planning on leaving~",
+						"I.. don't have to listen to you. But.. I'm curious, what is it that you have in store for me..",
+						"I can still.. ward off your influence, but.. there's something about you..",
+					]
+
+					saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+				else:
+					subEscapeProbability = 1.00
+					subEscapeProbabilityInverse = -0.01
+
+					possible = [
+						"I don't.. serve you..",
+						"You have no power.. over me..",
+					]
+
+					saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+
+	if(subIsTooFrightenedToEscape):
+		if(subWasHypnotizedIntoKneeling):
+			addAction("immediately_kneel", "OBEY", "You have lost control of your body..", "default", 1.0, 30, {})
+		else:
+			addDisabledAction("Escape", "You are too frightened to move.")
+			addAction("stand_frightened", "Stand in fear", "That's about all you can do..", "default", subStandInFearProbability, 60, {})
+			addAction( ( "immediately_kneel" if(subIntendsToKneel) else "eventually_kneel" ), "Kneel", "Set your fear aside and get on your knees.", subKneelScoreType, subKneelProbability, 30, {} )
 	else:
-		var subEscapeProbability = max( ( 1.0 - 2.0 * getSubLustRatio() ), -0.01 )
-		var subEscapeProbabilityInverse = 1 - subEscapeProbability
-
-		addAction("escape", "Escape", "This is what you want.", "default", subEscapeProbability, 60, {})
-		addAction("refuse_to_escape", "Stand still", "This is what you want.", "default", subEscapeProbabilityInverse, 60, {})
+		if(subWasHypnotizedIntoStandingStill):
+			addAction("refuse_to_escape", "OBEY", "You have lost control of your body..", "default", 1.0, 60, {})
+		else:
+			addAction("escape", "Escape", "This is what you want.", "default", subEscapeProbability, 60, {})
+			addAction("refuse_to_escape", "Stand still", "This is what you want.", "default", subEscapeProbabilityInverse, 60, {})
 
 func eased_grip_do(_id:String, _args:Dictionary, _context:Dictionary):
 	if(_id == "escape"):
 		setState("escaped", "sub")
 	elif(_id == "stand_frightened"):
 		setState("stood_frightened", "dom")
-	elif(_id == "kneel"):
+	elif(_id == "immediately_kneel"):
+		setState("kneeled", "dom")
+	elif(_id == "eventually_kneel"):
 		setState("stood_before_kneeling", "sub")
 	elif(_id == "refuse_to_escape"):
 		recoverSubStamina()
@@ -1403,13 +1533,38 @@ func tightened_grip_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 
 func kneeled_text():
-	saynn( RNG.pick([
-		"Eventually, {sub.you} {sub.youVerb('manage')} to set {sub.youHis} fears aside.. submissively kneeling in front of {dom.you}.",
-	]) )
+	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
 
-	addAction("sex", "Sex", "Just have some fun with them!", "sexDom", 1.0, 60, {})
-	addAction("pin_down", "Pin down", "Pin them into the ground.", "punish", 1.0, 60, {})
-	addAction("leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
+	if(subWasHypnotizedIntoKneeling || subIntendsToKneel):
+		saynn( RNG.pick([
+			"{sub.You} {sub.youVerb('kneel')} submissively in front of {dom.you}.",
+		]) )
+	else:
+		saynn( RNG.pick([
+			"Eventually, {sub.you} {sub.youVerb('manage')} to set {sub.youHis} fears aside.. submissively kneeling in front of {dom.you}.",
+		]) )
+
+	var domSexScoreType:String = "sexDom"
+	var domSexProbability:float = 1.0
+
+	var domPinDownScoreType:String = "punish"
+	var domPinDownProbability:float = 1.0
+
+	if( subWasHypnotizedIntoKneeling && sub.isPlayer() ):
+		var subInterestInUnconSex = subPawn.scoreFetishMax({ Fetish.UnconsciousSex: 1.0 })
+		var subLikesUnconSex = subInterestInUnconSex >= 0.5
+
+		if(!subLikesUnconSex):
+			domSexScoreType = "default"
+			domSexProbability = -0.01
+
+			domPinDownScoreType = "default"
+			domPinDownProbability = 1.0
+
+	addAction("sex", "Sex", "Just have some fun with them!", domSexScoreType, domSexProbability, 60, {})
+	addAction("pin_down", "Pin down", "Pin them into the ground.", domPinDownScoreType, domPinDownProbability, 60, {})
+	addAction("leave", "Leave", "You don't feel like doing anything with them.", "justleave", 1.0, 60, {})
 
 func kneeled_do(_id:String, _args:Dictionary, _context:Dictionary):
 	if(_id == "sex"):
@@ -2191,6 +2346,12 @@ func saveData():
 	data["subConsentedToUndressing"] = subConsentedToUndressing
 	data["subConsentedToAnalSexReceiving"] = subConsentedToAnalSexReceiving
 	data["subConsentedToAnalSexGiving"] = subConsentedToAnalSexGiving
+	data["subIsTooFrightenedToEscape"] = subIsTooFrightenedToEscape
+	data["subWasHypnotizedIntoKneeling"] = subWasHypnotizedIntoKneeling
+	data["subWasHypnotizedIntoStandingStill"] = subWasHypnotizedIntoStandingStill
+	data["subEscapeUponEaseGripProbability"] = subEscapeUponEaseGripProbability
+	data["subIntendsToKneel"] = subIntendsToKneel
+	data["subIntendsToStandStill"] = subIntendsToStandStill
 	data["subWasPinnedToTheGround"] = subWasPinnedToTheGround
 	data["subWasUndressed"] = subWasUndressed
 
@@ -2205,6 +2366,7 @@ func saveData():
 	data["domSpecialActionParamStrength"] = domSpecialActionParamStrength
 	data["domSpecialActionParamBodyPart"] = domSpecialActionParamBodyPart
 	data["domEasedGripOnce"] = domEasedGripOnce
+	data["domAttemptedToHypnotizeSubUponEaseGrip"] = domAttemptedToHypnotizeSubUponEaseGrip
 
 	return data
 
@@ -2224,6 +2386,12 @@ func loadData(_data):
 	subConsentedToUndressing = SAVE.loadVar(_data, "subConsentedToUndressing", false)
 	subConsentedToAnalSexReceiving = SAVE.loadVar(_data, "subConsentedToAnalSexReceiving", false)
 	subConsentedToAnalSexGiving = SAVE.loadVar(_data, "subConsentedToAnalSexGiving", false)
+	subIsTooFrightenedToEscape = SAVE.loadVar(_data, "subIsTooFrightenedToEscape", false)
+	subWasHypnotizedIntoKneeling = SAVE.loadVar(_data, "subWasHypnotizedIntoKneeling", false)
+	subWasHypnotizedIntoStandingStill = SAVE.loadVar(_data, "subWasHypnotizedIntoStandingStill", false)
+	subEscapeUponEaseGripProbability = SAVE.loadVar(_data, "subEscapeUponEaseGripProbability", 0.0)
+	subIntendsToKneel = SAVE.loadVar(_data, "subIntendsToKneel", false)
+	subIntendsToStandStill = SAVE.loadVar(_data, "subIntendsToStandStill", false)
 	subWasPinnedToTheGround = SAVE.loadVar(_data, "subWasPinnedToTheGround", false)
 	subWasUndressed = SAVE.loadVar(_data, "subWasUndressed", false)
 
@@ -2238,6 +2406,7 @@ func loadData(_data):
 	domSpecialActionParamStrength = SAVE.loadVar(_data, "domSpecialActionParamStrength", 0.0)
 	domSpecialActionParamBodyPart = SAVE.loadVar(_data, "domSpecialActionParamBodyPart", "none")
 	domEasedGripOnce = SAVE.loadVar(_data, "domEasedGripOnce", false)
+	domAttemptedToHypnotizeSubUponEaseGrip = SAVE.loadVar(_data, "domAttemptedToHypnotizeSubUponEaseGrip", false)
 	domWasUndressed = SAVE.loadVar(_data, "domWasUndressed", false)
 
 
@@ -2409,7 +2578,7 @@ func getSubLustRatio() -> float:
 			* lustRatioFromInterestInAnalSexReceiving
 		),
 		1,
-		(0.5 * forcedObedienceRatio)
+		(0.3 * forcedObedienceRatio)
 	)
 
 	var subLustRatio:float = clamp(
