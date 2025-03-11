@@ -10,6 +10,8 @@ var subPetNames:Array = ["creature"]
 
 var domIsBottoming:bool = false
 var domHasImmediatelyLeftConsentingSub:bool = false
+var domToggleableMouthPlayMightPerform:bool = false
+var domToggleableMouthPlayState:String = "none"
 var domToggleableMouthPlayActiveTurns:int = 0
 var domCuddlesLastedTurns:int = 0
 var domMessyKissingLastedTurns:int = 0
@@ -65,7 +67,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 		stageScene = StageScene.SexFreeStanding,
 		fastAnimationMinArousal = 0.90,
 		tags = [
-			
+			"toggleableMouthPlay",
 		],
 	},
 	{
@@ -73,7 +75,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 		name = "Full nelson",
 		stageScene = StageScene.SexFullNelson,
 		tags = [
-			
+			"toggleableMouthPlay",
 		],
 	},
 	ANAL_SEX_RECEIVING_POSE_MATING_PRESS,
@@ -88,7 +90,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 			wallsNearby = true,
 		},
 		tags = [
-			
+			"toggleableMouthPlay",
 		],
 	},
 	{
@@ -100,7 +102,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 			wallsNearby = true,
 		},
 		tags = [
-			"bottomUnboundArmsGraspingAtWall",
+			"bottomUnboundArmsGraspingAtWall", "toggleableMouthPlay",
 		],
 	},
 ]
@@ -196,6 +198,7 @@ func start(_pawns:Dictionary, _args:Dictionary):
 		getRoleChar("dom").setArousal(0.0)
 		getRoleChar("sub").setArousal(0.0)
 
+	domToggleableMouthPlayMightPerform = RNG.chance(50)
 	subMightEndSexEarly = RNG.chance(1)
 
 	setState("", "dom")
@@ -1349,6 +1352,8 @@ func sex_turn_text():
 	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
 	var topCameThisTurn = topCameInsideThisTurn || topCameOutsideThisTurn
 
+	toggleable_mouth_play_text()
+
 	if(isDomTurn && topCameThisTurn):
 		addAction("continue", "Keep going", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
@@ -1356,6 +1361,8 @@ func sex_turn_text():
 		addAction("had_enough_sex", "End sex", "Enough fun for now.", "default", endSexProbability, 0, {})
 	else:
 		addAction("continue", "Continue", "Just continue doing what you're doing.", "default", 1.0, 60, {})
+
+		toggleable_mouth_play_actions()
 
 		var endSexEarlyProbability = 1.0 if( !isDomTurn && subMightEndSexEarly && RNG.chance(1) ) else -0.01
 		addAction("end_sex_early", "End sex", "You no longer want this to continue.", "default", endSexEarlyProbability, 0, {})
@@ -1379,7 +1386,28 @@ func sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 	var nextTurnTopOrBottom = ( "top" if(currentTurnTopOrBottom == "bottom") else "bottom" )
 
-	if(_id == "continue"):
+	toggleable_mouth_play_do(_id, _args, _context)
+
+	if(_id == "had_enough_sex"):
+		var dom = getRoleChar("dom")
+
+		if( dom.isPlayer() ):
+			hasSexEndedEarly = false
+			setState("confirming_whether_to_end_sex", "dom")
+		else:
+			setState("dom_after_sex", "dom")
+	elif(_id == "end_sex_early"):
+		var character = getCurrentPawn().getCharacter()
+		var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
+
+		hasSexEndedEarly = true
+
+		if( character.isPlayer() ):
+			setState("confirming_whether_to_end_sex", characterRole)
+		else:
+			var partnerDomOrSubString = "dom" if(characterRole == "sub") else "sub"
+			setState("ended_sex_early", partnerDomOrSubString)
+	else:
 		increaseArousal({ nextTurnTopOrBottom = nextTurnTopOrBottom, })
 
 		if(topPenisWasOutsidePreviousTurn):
@@ -1399,25 +1427,191 @@ func sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 				setState( "sex_top_turn", getTopRole() )
 		else:
 			setState( "sex_bottom_turn", getBottomRole() )
-	elif(_id == "had_enough_sex"):
-		var dom = getRoleChar("dom")
 
-		if( dom.isPlayer() ):
-			hasSexEndedEarly = false
-			setState("confirming_whether_to_end_sex", "dom")
+
+func toggleable_mouth_play_text():
+	var domPawn = getRolePawn("dom")
+	var subPawn = getRolePawn("sub")
+
+	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
+	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
+
+	var affectionValue:float = domPawn.getAffection(subPawn)
+
+	var domPersonalityMeanScore = domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var domIsMean = domPersonalityMeanScore > 0.4
+
+	var subPersonalityMeanScore = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean = subPersonalityMeanScore > 0.4
+
+	var baseLines = []
+
+	if(domToggleableMouthPlayState == "started"):
+		baseLines = [
+			"{dom.You} {dom.youVerb('reach', 'reaches')} over, opening {dom.yourHis} paw and shoving "+ RNG.pick(["two", "three"]) +" digits into {sub.your} maw.",
+			"{dom.You} {dom.youVerb('lean')} forward, pressing {dom.yourHis} paw on {sub.your} lips before cravingly sliding "+ RNG.pick(["two", "three"]) +" digits past them.",
+		]
+
+		saynn( RNG.pick(baseLines) )
+		return
+
+	if(domToggleableMouthPlayState == "active"):
+		var topCameThisTurn = topCameInsideThisTurn || topCameOutsideThisTurn
+
+		if(topCameThisTurn):
+			return
+
+		if(isDomTurn):
+			baseLines = [
+				"{sub.You} {sub.youVerb('feel')} {dom.your} digits persistently slide past your lips, in and out.",
+				"{sub.You} {sub.youAre} further aroused by {dom.your} paw fish hooking your cheek.",
+				"{sub.Your} lips are forced to suck on {dom.your} digits as they slip back and forth.",
+			]
 		else:
-			setState("dom_after_sex", "dom")
-	elif(_id == "end_sex_early"):
-		var character = getCurrentPawn().getCharacter()
-		var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
+			baseLines = [
+				"{dom.Your} "+ RNG.pick(["two", "three"]) +" digits are shoved into {sub.your} maw, noticeably contributing to {sub.yourHis} arousal.",
+				"{dom.Your} paw is reaching into {sub.your} mouth, further corrupting {sub.yourHis} thoughts.",
+				"{dom.You} {dom.youAre} forcing {sub.you} to suck on {dom.yourHis} digits, squeezing them across the surface of {sub.yourHis} tongue.",
+			]
 
-		hasSexEndedEarly = true
+		saynn( RNG.pick(baseLines) )
+		return
 
-		if( character.isPlayer() ):
-			setState("confirming_whether_to_end_sex", characterRole)
+	if(domToggleableMouthPlayState == "stopped"):
+		baseLines = [
+			"Having played enough with {sub.your} mouth, {dom.you} {dom.youVerb('pull')} the paw away from it.",
+		]
+
+		saynn( RNG.pick(baseLines) )
+		return
+
+	if(domToggleableMouthPlayState == "interrupted"):
+		baseLines = []
+
+		var isBitePainful = subIsMean
+
+		if(isBitePainful):
+			baseLines.append_array([
+				"{sub.You} [color="+ getSensationColor("pain_severe") +"]{sub.youVerb('bite')} the digits[/color] in {sub.yourHis} mouth, causing {dom.you} to recoil from pain.",
+			])
 		else:
-			var partnerDomOrSubString = "dom" if(characterRole == "sub") else "sub"
-			setState("ended_sex_early", partnerDomOrSubString)
+			baseLines.append_array([
+				"{sub.You} [color="+ getSensationColor("pain_moderate") +"]lightly {sub.youVerb('chomp')}[/color] on {dom.your} paw. It doesn't hurt much, but it was a little unexpected.",
+			])
+
+		saynn( RNG.pick(baseLines) )
+
+		baseLines = []
+
+		if(isBitePainful):
+			baseLines = [
+				"Ow, fuck! I cannot tell if you're simply being a brat.. But I'll take a clue and not do that again. Either way, you're really missing out.",
+			]
+
+			if(domIsMean):
+				baseLines.append_array([
+					"Oww, now why the flying fuck would you do that!..",
+				])
+			else:
+				baseLines.append_array([
+					"Oww.. Fair fair, I should have asked if you're into that..",
+					"Ow! I was sure you'd be into that.. Oh well.",
+				])
+		else:
+			baseLines = []
+
+			if(domIsMean):
+				baseLines.append_array([
+					"You could just tell me you don't like it, you know?",
+					"What an untrained bitch. Fine, it's only you who's missing out.",
+				])
+			else:
+				if(affectionValue > 0.40):
+					baseLines.append_array([
+						"I swear I remember you being into that.. Hmh..",
+					])
+
+				baseLines.append_array([
+					"Ah! I think I get what you're biting..",
+					"Aw, no more paws for you.",
+				])
+
+		saynn( "[say=dom]"+ RNG.pick(baseLines) +"[/say]" )
+
+		baseLines = [
+			"{dom.You} reluctantly {dom.youVerb('pull')} {dom.yourHis} paw out of {sub.your} mouth.",
+		]
+
+		saynn( RNG.pick(baseLines) )
+		return
+
+func toggleable_mouth_play_actions():
+	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
+
+	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
+	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
+
+	var currentSexPose = getCurrentSexPose()
+
+	if(currentSexPose == null):
+		return
+
+	if( !("toggleableMouthPlay" in currentSexPose.tags) ):
+		return
+
+	var domIsPerformingMouthPlay = domToggleableMouthPlayActiveTurns > 0
+
+	if(domToggleableMouthPlayActiveTurns != 0):
+		domToggleableMouthPlayActiveTurns += 1
+
+	if(isDomTurn):
+		var ACTION_NAME_MOUTH_PLAY = "Mouth play"
+
+		if(!domIsPerformingMouthPlay):
+			var startMouthPlayProbability:float = 0.2 if( domToggleableMouthPlayMightPerform && (domToggleableMouthPlayActiveTurns == 0) ) else -0.01
+
+			if( (domToggleableMouthPlayState != "unavailable") && !sub.isOralBlocked() ):
+				addAction("toggleable_mouth_play_start", "+ "+ ACTION_NAME_MOUTH_PLAY, "Use your paw to play with their mouth.", "default", startMouthPlayProbability, 60, {})
+			elif(domToggleableMouthPlayState == "unavailable"):
+				addDisabledAction("+ "+ ACTION_NAME_MOUTH_PLAY, "They don't seem to be into that.")
+			else:
+				addDisabledAction("+ "+ ACTION_NAME_MOUTH_PLAY, "Unable to reach into their mouth due to their restraints.")
+		else:
+			var endMouthPlayProbability:float = -0.6 + 0.1 * domToggleableMouthPlayActiveTurns
+			addAction("toggleable_mouth_play_stop", "- "+ ACTION_NAME_MOUTH_PLAY, "Stop playing with their mouth.", "default", endMouthPlayProbability, 60, {})
+	else:
+		if(domIsPerformingMouthPlay):
+			var subInterestInBeingBitten:float = subPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
+			var interruptMouthPlayProbability:float = -subInterestInBeingBitten
+			addAction("toggleable_mouth_play_interrupt", "Bite paw", "You don't want them sticking digits in your mouth.", "default", interruptMouthPlayProbability, 60, {})
+
+func toggleable_mouth_play_do(_id:String, _args:Dictionary, _context:Dictionary):
+	var dom = getRoleChar("dom")
+	var subPawn = getRolePawn("sub")
+
+	var subPersonalityMeanScore = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean = subPersonalityMeanScore > 0.4
+
+	if(domToggleableMouthPlayState == "started"):
+		domToggleableMouthPlayState = "active"
+	elif(domToggleableMouthPlayState == "stopped"):
+		domToggleableMouthPlayState = "none"
+	elif(domToggleableMouthPlayState == "interrupted"):
+		domToggleableMouthPlayState = "unavailable"
+
+	if(_id == "toggleable_mouth_play_start"):
+		domToggleableMouthPlayState = "started"
+		domToggleableMouthPlayActiveTurns = 1
+	elif(_id == "toggleable_mouth_play_stop"):
+		domToggleableMouthPlayState = "stopped"
+		domToggleableMouthPlayActiveTurns = RNG.randi_range(-24, -16)
+	elif(_id == "toggleable_mouth_play_interrupt"):
+		domToggleableMouthPlayState = "interrupted"
+		domToggleableMouthPlayActiveTurns = -10000
+
+		var painInflictedFromBite = 6 if(subIsMean) else 2
+		dom.addPain(painInflictedFromBite)
 
 
 func getAnimData() -> Array:
@@ -1612,6 +1806,8 @@ func saveData():
 
 	data["domIsBottoming"] = domIsBottoming
 	data["domHasImmediatelyLeftConsentingSub"] = domHasImmediatelyLeftConsentingSub
+	data["domToggleableMouthPlayMightPerform"] = domToggleableMouthPlayMightPerform
+	data["domToggleableMouthPlayState"] = domToggleableMouthPlayState
 	data["domToggleableMouthPlayActiveTurns"] = domToggleableMouthPlayActiveTurns
 	data["domCuddlesLastedTurns"] = domCuddlesLastedTurns
 	data["domMessyKissingLastedTurns"] = domMessyKissingLastedTurns
@@ -1648,6 +1844,8 @@ func loadData(_data):
 
 	domIsBottoming = SAVE.loadVar(_data, "domIsBottoming", false)
 	domHasImmediatelyLeftConsentingSub = SAVE.loadVar(_data, "domHasImmediatelyLeftConsentingSub", false)
+	domToggleableMouthPlayMightPerform = SAVE.loadVar(_data, "domToggleableMouthPlayMightPerform", false)
+	domToggleableMouthPlayState = SAVE.loadVar(_data, "domToggleableMouthPlayState", "none")
 	domToggleableMouthPlayActiveTurns = SAVE.loadVar(_data, "domToggleableMouthPlayActiveTurns", 0)
 	domCuddlesLastedTurns = SAVE.loadVar(_data, "domCuddlesLastedTurns", 0)
 	domMessyKissingLastedTurns = SAVE.loadVar(_data, "domMessyKissingLastedTurns", 0)
@@ -2215,7 +2413,7 @@ func getBaseLinesForCurrentSexPose_topCameInside() -> Array:
 		]
 
 	return [
-		"{top.You} fill {bottom.your} "+ bottom_anus + " full of {top.yourHis} "+ top_cum + "."
+		"{top.You} {top.youVerb('fill')} {bottom.your} "+ bottom_anus + " full of {top.yourHis} "+ top_cum + "."
 	]
 
 func getBaseLinesForCurrentSexPose_bothCame() -> Array:
@@ -2459,9 +2657,17 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 func getDialogueLines_endedSexEarly(_character:BaseCharacter, _characterRole:String) -> Array:
 	# Used by both doms and subs
 
-	var dialogueLines = [
-		"I thought I'd be up for it, but I'm really not feeling it right now.. Sorry.",
-	]
+	var dialogueLines = []
+
+	if(topCameTimes >= 2):
+		dialogueLines.append_array([
+			"F- Fuck.. I cannot endure it for much longer. That was hot though..",
+			"I.. really need a break. But don't get me wrong, that was amazing.",
+		])
+	else:
+		dialogueLines.append_array([
+			"I thought I'd be up for it, but I'm really not feeling it right now.. Sorry.",
+		])
 
 	return dialogueLines
 
