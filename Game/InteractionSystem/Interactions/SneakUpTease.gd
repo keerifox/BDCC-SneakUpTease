@@ -684,9 +684,10 @@ func undressed_both_text():
 	var creature_stands_OR_lays = "stands" if(!subWasPinnedToTheGround) else "lays"
 	var creature_behind_OR_above = "behind" if(!subWasPinnedToTheGround) else "above"
 	var sub_youVerb_stand_OR_lay = "{sub.youVerb('stand')}" if(!subWasPinnedToTheGround) else "{sub.youVerb('lay')}"
+	var both_yourTheir = "your" if( isPlayerInvolved() ) else "their"
 
 	var possible = [
-		"{sub.You} "+ sub_youVerb_stand_OR_lay +" obediently still as {dom.you} {dom.youVerb('begin')} to remove all {dom.yourHis} clothes. {dom.YourHis} paws then proceed to roam all over {sub.your} body, stripping {sub.youHim} of {sub.yourHis} clothing too. Each bit that covered your secluded parts is now either messily scattered on the floor, or alluringly hanging around one's ankles.",
+		"{sub.You} "+ sub_youVerb_stand_OR_lay +" obediently still as {dom.you} {dom.youVerb('begin')} to remove all {dom.yourHis} clothes. {dom.YourHis} paws then proceed to roam all over {sub.your} body, stripping {sub.youHim} of {sub.yourHis} clothing too. Each bit that covered "+ both_yourTheir +" secluded parts is now either messily scattered on the floor, or alluringly hanging around one's ankles.",
 		"{sub.You} "+ sub_youVerb_stand_OR_lay +" eagerly still as {dom.you} assertively {dom.youVerb('strip')} {sub.youHim} of {sub.yourHis} clothes. Before {sub.you} {sub.youVerb('manage')} to shake the lust off, {sub.youHe} {sub.youVerb('notice')} that all of {dom.your} clothes are now also scattered on the ground. Positioned "+ creature_behind_OR_above +" {sub.you} "+ creature_stands_OR_lays +" a hot, naked creature.",
 	]
 

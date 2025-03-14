@@ -1476,8 +1476,8 @@ func incl_toggleable_mouth_play_text():
 
 		if(isDomTurn):
 			baseLines = [
-				"{sub.You} {sub.youVerb('feel')} {dom.your} digits persistently slide past your lips, in and out.",
-				"{sub.You} {sub.youAre} further aroused by {dom.your} paw fish hooking your cheek.",
+				"{sub.You} {sub.youVerb('feel')} {dom.your} digits persistently slide past {sub.yourHis} lips, in and out.",
+				"{sub.You} {sub.youAre} further aroused by {dom.your} paw fish hooking {sub.yourHis} cheek.",
 				"{sub.Your} lips are forced to suck on {dom.your} digits as they slip back and forth.",
 			]
 		else:
