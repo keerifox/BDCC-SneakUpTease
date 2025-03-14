@@ -1595,8 +1595,8 @@ func incl_toggleable_mouth_play_actions():
 			addAction("toggleable_mouth_play_stop", "- "+ ACTION_NAME_MOUTH_PLAY, "Stop playing with their mouth.", "default", endMouthPlayProbability, 60, {})
 	else:
 		if(domIsPerformingMouthPlay):
-			var subInterestInBeingBitten:float = subPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
-			var interruptMouthPlayProbability:float = -subInterestInBeingBitten
+			var subInterestInMouthPlay:float = subPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
+			var interruptMouthPlayProbability:float = -subInterestInMouthPlay
 			addAction("toggleable_mouth_play_interrupt", "Bite paw", "You don't want them sticking digits in your mouth.", "default", interruptMouthPlayProbability, 60, {})
 
 func incl_toggleable_mouth_play_do(_id:String, _args:Dictionary, _context:Dictionary):
