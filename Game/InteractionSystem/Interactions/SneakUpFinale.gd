@@ -1354,6 +1354,8 @@ func incl_sex_turn_text():
 
 	incl_toggleable_mouth_play_text()
 
+	incl_sex_turn_dialogue_text()
+
 	if(isDomTurn && topCameThisTurn):
 		addAction("continue", "Keep going", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
@@ -1366,6 +1368,17 @@ func incl_sex_turn_text():
 
 		var endSexEarlyProbability = 1.0 if( !isDomTurn && subMightEndSexEarly && RNG.chance(1) ) else -0.01
 		addAction("end_sex_early", "End sex", "You no longer want this to continue.", "default", endSexEarlyProbability, 0, {})
+
+func incl_sex_turn_dialogue_text():
+	var top = getTopChar()
+
+	var topDialogueLines = []
+
+	if( !domIsBottoming && topPenisWasOutsidePreviousTurn && RNG.chance(20) ):
+		topDialogueLines = getDialogueLines_emphasizeTightness(top)
+
+	if( topDialogueLines.size() > 0 ):
+		saynn("[say=dom]"+ RNG.pick(topDialogueLines) +"[/say]")
 
 func incl_sex_turn_do_preTick(_id:String):
 	var dom = getRoleChar("dom")
@@ -2651,6 +2664,44 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 			dialogueLines.append_array([
 				"Sit!",
 			])
+
+	return dialogueLines
+
+func getDialogueLines_emphasizeTightness(_character:BaseCharacter) -> Array:
+	var sub = getRoleChar("sub")
+	var domPawn = getRolePawn("dom")
+
+	var dialogueLines = []
+
+	var subBodypartAnus:BodypartAnus = sub.getBodypart(BodypartSlot.Anus)
+
+	if(subBodypartAnus == null):
+		dialogueLines = []
+		return dialogueLines
+
+	var subOrificeAnus:Orifice = subBodypartAnus.getOrifice()
+
+	if(subOrificeAnus == null):
+		dialogueLines = []
+		return dialogueLines
+
+	var subAnusLooseness:float = subOrificeAnus.getLooseness()
+
+	if(subAnusLooseness > 0.5):
+		dialogueLines = []
+		return dialogueLines
+
+	var domPersonalityMeanScore = domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var domIsMean = domPersonalityMeanScore > 0.4
+
+	dialogueLines.append_array([
+		"You're so tight..",
+	])
+
+	if(!domIsMean):
+		dialogueLines.append_array([
+			"Didn't expect you to be so tight~"
+		])
 
 	return dialogueLines
 
