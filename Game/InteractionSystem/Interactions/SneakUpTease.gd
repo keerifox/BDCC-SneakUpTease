@@ -2016,9 +2016,10 @@ func incl_post_dom_flirt_text():
 					])
 
 		if(domIsMean):
-			possible.append_array([
-				"Keep bending over, bitch. You're much hotter this way.",
-			])
+			if(!subWasPinnedToTheGround):
+				possible.append_array([
+					"Keep bending over, bitch. You're much hotter this way.",
+				])
 		else:
 			possible.append_array([
 				"I really want you right now..",
