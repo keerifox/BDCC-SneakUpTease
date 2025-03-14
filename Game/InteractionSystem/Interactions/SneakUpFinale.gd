@@ -401,12 +401,12 @@ func sex_bottom_turn_text():
 	eventLine = postProcessEventLine(eventLine)
 	saynn(eventLine)
 
-	sex_turn_text()
+	incl_sex_turn_text()
 
 func sex_bottom_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
-	sex_turn_do_preTick(_id)
+	incl_sex_turn_do_preTick(_id)
 
-	sex_turn_do(_id, _args, _context)
+	incl_sex_turn_do(_id, _args, _context)
 
 
 func sex_top_turn_text():
@@ -458,15 +458,15 @@ func sex_top_turn_text():
 			addAction("cum_inside", "Cum: Inside", "Finish inside of them.", "default", domProbabilityToPickStuffedAss, 60, {})
 			addAction("cum_outside", "Cum: Outside", "Finish after pulling out.", "default", domProbabilityToPickPullingOut, 60, {})
 	else:
-		sex_turn_text()
+		incl_sex_turn_text()
 
 func sex_top_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var top = getTopChar()
 	var bottom = getBottomChar()
 
-	sex_turn_do_preTick(_id)
+	incl_sex_turn_do_preTick(_id)
 
-	if( (_id == "cum_inside") or (_id == "cum_outside") ):
+	if( _id in ["cum_inside", "cum_outside"] ):
 		topCameTimes += 1
 
 		bottom.gotAnusFuckedBy( top.getID() )
@@ -493,7 +493,7 @@ func sex_top_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 		setState("sex_"+ currentTurnTopOrBottom +"_turn", "dom")
 
-	sex_turn_do(_id, _args, _context)
+	incl_sex_turn_do(_id, _args, _context)
 
 	if( bottom.getArousal() >= 1.0 ):
 		bottomCameThisTurn = true
@@ -1347,12 +1347,12 @@ func dom_left_sub_alone_do(_id:String, _args:Dictionary, _context:Dictionary):
 		stopMe()
 
 
-func sex_turn_text():
+func incl_sex_turn_text():
 	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
 	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
 	var topCameThisTurn = topCameInsideThisTurn || topCameOutsideThisTurn
 
-	toggleable_mouth_play_text()
+	incl_toggleable_mouth_play_text()
 
 	if(isDomTurn && topCameThisTurn):
 		addAction("continue", "Keep going", "Just continue doing what you're doing.", "default", 1.0, 60, {})
@@ -1362,12 +1362,12 @@ func sex_turn_text():
 	else:
 		addAction("continue", "Continue", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
-		toggleable_mouth_play_actions()
+		incl_toggleable_mouth_play_actions()
 
 		var endSexEarlyProbability = 1.0 if( !isDomTurn && subMightEndSexEarly && RNG.chance(1) ) else -0.01
 		addAction("end_sex_early", "End sex", "You no longer want this to continue.", "default", endSexEarlyProbability, 0, {})
 
-func sex_turn_do_preTick(_id:String):
+func incl_sex_turn_do_preTick(_id:String):
 	var dom = getRoleChar("dom")
 
 	if( ( _id in ["had_enough_sex", "end_sex_early"] ) && dom.isPlayer() ):
@@ -1380,13 +1380,13 @@ func sex_turn_do_preTick(_id:String):
 	topCameInsideThisTurn = false
 	topCameOutsideThisTurn = false
 
-func sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
+func incl_sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var top = getTopChar()
 	var bottom = getBottomChar()
 
 	var nextTurnTopOrBottom = ( "top" if(currentTurnTopOrBottom == "bottom") else "bottom" )
 
-	toggleable_mouth_play_do(_id, _args, _context)
+	incl_toggleable_mouth_play_do(_id, _args, _context)
 
 	if(_id == "had_enough_sex"):
 		var dom = getRoleChar("dom")
@@ -1429,7 +1429,7 @@ func sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 			setState( "sex_bottom_turn", getBottomRole() )
 
 
-func toggleable_mouth_play_text():
+func incl_toggleable_mouth_play_text():
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
 
@@ -1545,7 +1545,7 @@ func toggleable_mouth_play_text():
 		saynn( RNG.pick(baseLines) )
 		return
 
-func toggleable_mouth_play_actions():
+func incl_toggleable_mouth_play_actions():
 	var sub = getRoleChar("sub")
 	var subPawn = getRolePawn("sub")
 
@@ -1586,7 +1586,7 @@ func toggleable_mouth_play_actions():
 			var interruptMouthPlayProbability:float = -subInterestInBeingBitten
 			addAction("toggleable_mouth_play_interrupt", "Bite paw", "You don't want them sticking digits in your mouth.", "default", interruptMouthPlayProbability, 60, {})
 
-func toggleable_mouth_play_do(_id:String, _args:Dictionary, _context:Dictionary):
+func incl_toggleable_mouth_play_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var dom = getRoleChar("dom")
 	var subPawn = getRolePawn("sub")
 

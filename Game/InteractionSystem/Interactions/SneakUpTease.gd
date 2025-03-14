@@ -44,6 +44,7 @@ var domSpecialActionParamBodyPart:String = "none"
 var domEasedGripOnce:bool = false
 var domAttemptedToHypnotizeSubUponEaseGrip:bool = false
 var domWasUndressed:bool = false
+var domWasCaptivatedBySubPenis:bool = false
 
 func _init():
 	id = "SneakUpTease"
@@ -83,6 +84,7 @@ func start(_pawns:Dictionary, _args:Dictionary):
 func init_text():
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
 
 	var possible = []
 
@@ -122,12 +124,12 @@ func init_text():
 		saynn(RNG.pick(possible))
 	else:
 		if(domSpecialActionKeyLastUsed == "bite"):
-			post_dom_special_bite_text()
+			incl_post_dom_special_bite_text()
 
 		domSpecialActionKeyLastUsed = "none"
 	
 	if(domFlirtCooldown == DOM_FLIRT_COOLDOWN_TURNS):
-		post_dom_flirt_text()
+		incl_post_dom_flirt_text()
 
 	if(subResistedTimes == 0):
 		var breakFreeStrengthStatRequirement = max( 5, ceil( 0.40 * dom.getStat(Stat.Strength) ) )
@@ -163,6 +165,9 @@ func init_text():
 		var isAbleToRubInReturn = !subWasPinnedToTheGround
 		var haveRubbedDomButIntentWasUnclear = (subRubbedAgainstDomTimes == 1)
 
+		var subInterestInAnalSexGiving:float = subPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
+		var subDislikesAnalSexGiving:bool = subInterestInAnalSexGiving <= -0.5
+
 		if(!subConsentedToUndressing):
 			var subRemoveClothesBegProbability = max( ( 1.0 * ( getSubLustRatio() - 0.50 ) ), -0.01 ) if(!haveRubbedDomButIntentWasUnclear || !isAbleToRubInReturn) else -0.01
 
@@ -172,16 +177,19 @@ func init_text():
 			addAction("beg_for_clothes_removal", "Beg: Feel them", "Beg them to get clothes out of the way.", "default", subRemoveClothesBegProbability, 60, {})
 		elif(wasClothingRemoved):
 			var subAnalSexReceivingBegProbability = max( ( 1.0 * ( getSubLustRatio() - 0.80 ) ), -0.01 )
-			var subAnalSexGivingBegProbability = -0.01
+			var subAnalSexGivingBegProbability = -0.01 if( getSubAnalSexReceivingPossible() ) else subAnalSexReceivingBegProbability
 
 			if(domRefusedPenetrationRequestTimes > 0):
 				subAnalSexReceivingBegProbability = 2.0
+
+			if(domWasCaptivatedBySubPenis && !subDislikesAnalSexGiving):
+				subAnalSexGivingBegProbability = subAnalSexReceivingBegProbability
+				subAnalSexReceivingBegProbability = 0.2 * subAnalSexReceivingBegProbability
 
 			if( getSubAnalSexReceivingPossible() ):
 				addAction("beg_for_anal_sex_receiving", "Beg: Fuck me", "Beg them to penetrate your anal ring.", "default", subAnalSexReceivingBegProbability, 60, {})
 			else:
 				addDisabledAction("Beg: Fuck me", "This interaction doesn't seem to be possible.")
-				subAnalSexGivingBegProbability = subAnalSexReceivingBegProbability
 
 			if( !domRefusedAnalSexReceiving && getSubAnalSexGivingPossible() ):
 				addAction("beg_for_anal_sex_giving", "Ask: Ride me", "Beg them to ride your cock.", "default", subAnalSexGivingBegProbability, 60, {})
@@ -196,6 +204,9 @@ func init_text():
 
 				if(haveRubbedDomButIntentWasUnclear):
 					subRubAgainstDomProbability = 2.0
+
+				if(domWasCaptivatedBySubPenis && !subDislikesAnalSexGiving):
+					subRubAgainstDomProbability = 0.2 * subRubAgainstDomProbability
 
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
 
@@ -365,7 +376,7 @@ func after_sub_resisted_text():
 	saynn(RNG.pick(possible))
 	
 	if(subSnarkCooldown == SUB_SNARK_COOLDOWN_TURNS):
-		post_sub_snark_text()
+		incl_post_sub_snark_text()
 	
 	if(!subWasPinnedToTheGround):
 		if(subResistedWhileNotWaitingOrHesitatingTimes > SUB_MAX_RESISTING_TURNS_WHEN_STANDING):
@@ -377,10 +388,10 @@ func after_sub_resisted_text():
 		if( sub.isPlayer() ):
 			addMessage("{sub.You} used 5 stamina.")
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func after_sub_resisted_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func after_sub_softened_text():
@@ -500,13 +511,13 @@ func after_sub_softened_text():
 	if( sub.isPlayer() && (subStaminaRecovered > 0) ):
 		addMessage("{sub.You} recovered " + str(subStaminaRecovered) + " stamina.")
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func after_sub_softened_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
-func after_sub_resisted_or_softened_text():
+func incl_after_sub_resisted_or_softened_text():
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
@@ -554,7 +565,7 @@ func after_sub_resisted_or_softened_text():
 	else:
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
 
-func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Dictionary):
+func incl_after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
@@ -566,7 +577,7 @@ func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Di
 
 	subStaminaRecovered = 0
 
-	if( (_id == "rub") || (_id == "special_bite") ):
+	if( _id in ["rub", "special_bite"] ):
 		if( dom.getLustLevel() < 0.7 ):
 			dom.addLust( int( ceil( 0.05 * dom.lustThreshold() ) ) )
 		else:
@@ -593,16 +604,19 @@ func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Di
 		sub.lustStateFullyUndress()
 		subWasUndressed = true
 		subSoftenedWhileWaitingTimes = 0
+		incl_after_anyone_undressed_do()
 		setState("undressed_both", "dom")
 	elif(_id == "undress_sub"):
 		sub.lustStateFullyUndress()
 		subWasUndressed = true
 		subSoftenedWhileWaitingTimes = 0
+		incl_after_anyone_undressed_do()
 		setState("undressed_sub", "dom")
 	elif(_id == "undress_self"):
 		dom.lustStateFullyUndress()
 		domWasUndressed = true
 		subSoftenedWhileWaitingTimes = 0
+		incl_after_anyone_undressed_do()
 		setState("undressed_self", "dom")
 	elif(_id == "pin_down"):
 		subWasPinnedToTheGround = true
@@ -621,7 +635,7 @@ func after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Di
 
 		setState("", "sub")
 	elif(_id == "special_bite"):
-		dom_special_bite_do()
+		incl_dom_special_bite_do()
 	elif(_id == "ease_grip"):
 		domEasedGripOnce = true
 
@@ -671,10 +685,11 @@ func undressed_both_text():
 
 	saynn(RNG.pick(possible))
 
-	after_sub_resisted_or_softened_text()
+	incl_after_anyone_undressed_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func undressed_both_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func undressed_sub_text():
@@ -692,10 +707,11 @@ func undressed_sub_text():
 
 	saynn(RNG.pick(possible))
 
-	after_sub_resisted_or_softened_text()
+	incl_after_anyone_undressed_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func undressed_sub_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func undressed_self_text():
@@ -710,10 +726,63 @@ func undressed_self_text():
 
 	saynn(RNG.pick(possible))
 
-	after_sub_resisted_or_softened_text()
+	incl_after_anyone_undressed_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func undressed_self_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
+
+
+func incl_after_anyone_undressed_do():
+	var sub = getRoleChar("sub")
+	var domPawn = getRolePawn("dom")
+
+	if( !getSubAnalSexGivingPossible() || sub.isBodypartCovered(BodypartSlot.Penis) ):
+		return
+
+	var domInterestInAnalSexReceiving = domPawn.scoreFetishMax({ Fetish.AnalSexReceiving: 1.0 })
+	var domLikesAnalSexReceiving = domInterestInAnalSexReceiving >= 0.5
+
+	if(!domLikesAnalSexReceiving):
+		return
+
+	var domInterestInAnalSexGiving = domPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
+	var chanceToBeCaptivatedBySubPenis:float = 40.0 + clamp( (-domInterestInAnalSexGiving * 40.0), 0.0, 30.0 )
+
+	if( !RNG.chance(chanceToBeCaptivatedBySubPenis) ):
+		return
+
+	domWasCaptivatedBySubPenis = true
+
+func incl_after_anyone_undressed_text():
+	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
+
+	if(!domWasCaptivatedBySubPenis):
+		return
+
+	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
+	var sub_penis = "{sub.penisDesc} "+ RNG.pick(["cock", "dick", "member"])
+
+	var subIsFullyNaked:bool = isCharFullyNaked(sub)
+
+	var possible = [
+		"{dom.You} teasingly {dom.youVerb('brush', 'brushes')} the tip of {sub.your} "+ sub_penis +", before returning to {sub.yourHis} wrists.",
+	]
+
+	if(subWasUndressed):
+		if( !dom.isBlindfolded() ):
+			possible.append_array([
+				"After getting {sub.you} "+( "fully naked" if(subIsFullyNaked) else "to reveal more of {sub.yourHis} naked body" )+", {dom.you} {dom.youVerb('take')} a moment to admire {sub.yourHis} "+ sub_penis +".",
+				"With clothes out of the way, {dom.you} {dom.youVerb('catch', 'catches')} sight of {sub.your} aroused "+ sub_penis +" swaying in the light.",
+			])
+	else:
+		if( !dom.isBlindfolded() ):
+			possible.append_array([
+				"{sub.You} {sub.youVerb('notice')} {dom.your} eyes briefly fixating on {sub.yourHis} "+ sub_penis +", before {dom.youHe} {dom.youVerb('look')} away, conscious of the fact "+ dom_you_veHe_s +" been staring far longer than {dom.youHe} thought.",
+			])
+
+	saynn(RNG.pick(possible))
 
 
 func begged_for_clothes_removal_text():
@@ -806,12 +875,12 @@ func begged_for_clothes_removal_text():
 	saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
 
 	if(hasDomRefusedRequest):
-		dom_refuse_request_text({ speechComprehensibility = speechComprehensibility })
+		incl_dom_refuse_request_text({ speechComprehensibility = speechComprehensibility })
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func begged_for_clothes_removal_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func begged_for_anal_sex_receiving_text():
@@ -894,12 +963,12 @@ func begged_for_anal_sex_receiving_text():
 	saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
 
 	if(hasDomRefusedRequest):
-		dom_refuse_request_text({ speechComprehensibility = speechComprehensibility })
+		incl_dom_refuse_request_text({ speechComprehensibility = speechComprehensibility })
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func begged_for_anal_sex_receiving_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func rubbed_against_dom_text():
@@ -950,7 +1019,7 @@ func rubbed_against_dom_text():
 		saynn(RNG.pick(possible))
 
 	if(isConsentingToUndress || isConsentingToToAnalSexReceiving):
-		after_sub_resisted_or_softened_text()
+		incl_after_sub_resisted_or_softened_text()
 	else:
 		addAction("ask_for_something_else", "Continue", "See what happens next..", "default", 1.0, 60, {})
 
@@ -960,7 +1029,7 @@ func rubbed_against_dom_do(_id:String, _args:Dictionary, _context:Dictionary):
 		setState("asked_for_something_else", "dom")
 		return
 
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func asked_for_something_else_text():
@@ -971,48 +1040,83 @@ func asked_for_something_else_text():
 
 	var subPersonalityMeanScore = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
 	var subIsMean = subPersonalityMeanScore > 0.4
-	
-	var isSubAnalSexGivingPossible = getSubAnalSexGivingPossible()
-	var subInterestInAnalSexGiving = subPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
-	var subDislikesAnalSexGiving = !sub.isPlayer() && (subInterestInAnalSexGiving <= -0.5)
 
-	var reasonSubUnableToAnalSexReceive = getReasonCharCannotPartakeInAnalSexReceiving(sub)
-	var reasonDomUnableToAnalSexGive = getReasonCharCannotPartakeInAnalSexGiving(dom)
+	var subInterestInAnalSexGiving:float = subPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
+	var subDislikesAnalSexGiving:bool = !sub.isPlayer() && (subInterestInAnalSexGiving <= -0.5)
+	var subOfferingToRideThem:bool = ( getSubAnalSexGivingPossible() && !subDislikesAnalSexGiving )
 
-	var sexIncompatibilities = ""
-	
-	if(reasonSubUnableToAnalSexReceive != null):
-		sexIncompatibilities += (reasonSubUnableToAnalSexReceive + " ")
-	
-	if(reasonDomUnableToAnalSexGive != null):
-		sexIncompatibilities += (reasonDomUnableToAnalSexGive + " ")
-
-	if(sexIncompatibilities == ""):
-		if(subIsMean):
-			sexIncompatibilities += RNG.pick([
-				"Tell you what, slut..",
-				"I have something better in mind for a bitch like you..",
-			]) + " "
-		else:
-			sexIncompatibilities += RNG.pick([
-				"You're really hot, but I was hoping for something else..",
-				"Hnn.. I love feeling you like this, but I would like to try something different..",
-			]) + " "
+	var reasonSubUnableToAnalSexReceive = getReasonCharCannotPartakeInAnalSexReceiving(sub, "sub")
+	var reasonDomUnableToAnalSexGive = getReasonCharCannotPartakeInAnalSexGiving(dom, "dom")
 
 	var possible = []
 
-	if(!subDislikesAnalSexGiving && isSubAnalSexGivingPossible):
+	if( domWasCaptivatedBySubPenis && subOfferingToRideThem && (reasonSubUnableToAnalSexReceive == null) ):
+		var sub_penis = RNG.pick(["cock", "dick", "member"])
+		var sub_canine_penis = "{sub.penisDesc} "+ sub_penis
+
 		possible.append_array([
-			sexIncompatibilities +"Would you like to ride my "+ RNG.pick(["cock", "dick", "member"]) +" instead?",
+			"Mmmh, my cock has certainly caught your interest.. Want to get more intimate with it?",
+			"You've been rubbing my butt quite a lot, but you can't hide just how much you're craving to be stuffed~",
 		])
+
+		if(subIsMean):
+			if( !sub.isBlindfolded() && !dom.isBlindfolded() ):
+				possible.append_array([
+					"Can't get your eyes off my "+ sub_penis +", huh? A slut like you should do more than just stare.",
+				])
+
+			possible.append_array([
+				"You can pretend you want to fill me up, but it's really you who wants to be dripping for hours on end. Admit it, whore, and maybe I'll consider making it your reality.",
+			])
+		else:
+			if( !sub.isBlindfolded() && !dom.isBlindfolded() ):
+				possible.append_array([
+					"I've seen you staring~.. I'd love to watch your hips tremble as you're riding me.. If that's what you want, of course.",
+				])
+
+			if( !sub.isBlindfolded() ):
+				possible.append_array([
+					"You look like you're just craving to be filled.. I wouldn't say no to that~",
+				])
+
+			possible.append_array([
+				"You seem quite interested in my "+ sub_penis +", teehee. Want to take it in?~",
+				"I couldn't help but notice how much attention you've been paying to my "+ sub_canine_penis +".. Want to have it all to yourself?",
+				"You seem to be liking my "+ sub_canine_penis +" quite a bit.. Want to take it for a ride?~",
+			])
 	else:
-		possible.append_array([
-			sexIncompatibilities +"Would you like to have some fun with me instead?",
-		])
+		var sexIncompatibilities = ""
+
+		if(reasonSubUnableToAnalSexReceive != null):
+			sexIncompatibilities += (reasonSubUnableToAnalSexReceive + " ")
+		
+		if(reasonDomUnableToAnalSexGive != null):
+			sexIncompatibilities += (reasonDomUnableToAnalSexGive + " ")
+
+		if(sexIncompatibilities == ""):
+			if(subIsMean):
+				sexIncompatibilities += RNG.pick([
+					"Tell you what, slut..",
+					"I have something better in mind for a bitch like you..",
+				]) + " "
+			else:
+				sexIncompatibilities += RNG.pick([
+					"You're really hot, but I was hoping for something else..",
+					"Hnn.. I love feeling you like this, but I would like to try something different..",
+				]) + " "
+
+		if(subOfferingToRideThem):
+			possible.append_array([
+				sexIncompatibilities +"Would you like to ride my "+ RNG.pick(["cock", "dick", "member"]) +" instead?",
+			])
+		else:
+			possible.append_array([
+				sexIncompatibilities +"Would you like to have some fun with me instead?",
+			])
 
 	saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
 
-	if(isSubAnalSexGivingPossible):
+	if(subOfferingToRideThem):
 		var domInterestInAnalSexReceiving = domPawn.scoreFetishMax({ Fetish.AnalSexReceiving: 1.0 })
 		
 		var probabilityToAgreeToAnalSexReceiving = 1.0
@@ -1086,11 +1190,10 @@ func agreed_to_something_else_text():
 	addAction("advance_to_finale", "Advance", "Time for some fun..", "default", 1.0, 10, {})
 
 func agreed_to_something_else_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func refused_something_else_text():
-	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
 
 	var domPersonalityMeanScore = domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
@@ -1134,15 +1237,15 @@ func refused_something_else_text():
 
 		saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
 
-	var shouldAdvanceToFinale = !sub.isPlayer()
+	var haveExhaustedAllPossibleOptions = !getSubAnalSexReceivingPossible()
 
-	if(shouldAdvanceToFinale):
+	if(haveExhaustedAllPossibleOptions):
 		addAction("advance_to_finale", "Advance", "Time for some fun..", "default", 1.0, 10, {})
 	else:
-		after_sub_resisted_or_softened_text()
+		incl_after_sub_resisted_or_softened_text()
 
 func refused_something_else_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func ran_out_of_patience_text():
@@ -1259,10 +1362,10 @@ func pinned_after_kneeling_or_running_out_of_stamina_text():
 
 	saynn(RNG.pick(possible))
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func pinned_after_kneeling_or_running_out_of_stamina_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func pinned_after_resisting_too_much_text():
@@ -1325,10 +1428,10 @@ func pinned_after_resisting_too_much_text():
 
 	saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func pinned_after_resisting_too_much_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func eased_grip_text():
@@ -1526,10 +1629,10 @@ func tightened_grip_text():
 		"{dom.You} {dom.youVerb('tighten')} {dom.yourHis} paws around {sub.your} wrists, possessively comforting {sub.youHim}.",
 	]) )
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func tightened_grip_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func kneeled_text():
@@ -1619,10 +1722,10 @@ func refused_to_escape_text():
 	if( sub.isPlayer() && (subStaminaRecovered > 0) ):
 		addMessage("{sub.You} recovered " + str(subStaminaRecovered) + " stamina.")
 
-	after_sub_resisted_or_softened_text()
+	incl_after_sub_resisted_or_softened_text()
 
 func refused_to_escape_do(_id:String, _args:Dictionary, _context:Dictionary):
-	after_sub_resisted_or_softened_do(_id, _args, _context)
+	incl_after_sub_resisted_or_softened_do(_id, _args, _context)
 
 
 func immediately_broke_free_text():
@@ -1714,7 +1817,7 @@ func left_laying_down_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 func in_pain_text():
 	if(domSpecialActionKeyLastUsed == "bite"):
-		post_dom_special_bite_text()
+		incl_post_dom_special_bite_text()
 
 	domSpecialActionKeyLastUsed = "none"
 
@@ -1735,7 +1838,7 @@ func in_pain_do(_id:String, _args:Dictionary, _context:Dictionary):
 		stopMe()
 
 
-func post_dom_flirt_text():
+func incl_post_dom_flirt_text():
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
@@ -1970,7 +2073,7 @@ func post_dom_flirt_text():
 		saynn("{sub.You} {sub.youVerb('blush', 'blushes')}.")
 
 
-func post_sub_snark_text():
+func incl_post_sub_snark_text():
 	var sub = getRoleChar("sub")
 	var subPawn = getRolePawn("sub")
 
@@ -2000,7 +2103,7 @@ func post_sub_snark_text():
 	saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
 
 
-func dom_refuse_request_text(_info:Dictionary):
+func incl_dom_refuse_request_text(_info:Dictionary):
 	var speechComprehensibility = _info.speechComprehensibility
 
 	var domPawn = getRolePawn("dom")
@@ -2054,7 +2157,7 @@ func dom_refuse_request_text(_info:Dictionary):
 	saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
 
 
-func dom_special_bite_do():
+func incl_dom_special_bite_do():
 	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
@@ -2097,7 +2200,7 @@ func dom_special_bite_do():
 	else:
 		setState("", "sub")
 
-func post_dom_special_bite_text():
+func incl_post_dom_special_bite_text():
 	var bittenBodyPart = domSpecialActionParamBodyPart
 
 	var biteType = ""
@@ -2367,6 +2470,8 @@ func saveData():
 	data["domSpecialActionParamBodyPart"] = domSpecialActionParamBodyPart
 	data["domEasedGripOnce"] = domEasedGripOnce
 	data["domAttemptedToHypnotizeSubUponEaseGrip"] = domAttemptedToHypnotizeSubUponEaseGrip
+	data["domWasUndressed"] = domWasUndressed
+	data["domWasCaptivatedBySubPenis"] = domWasCaptivatedBySubPenis
 
 	return data
 
@@ -2408,6 +2513,7 @@ func loadData(_data):
 	domEasedGripOnce = SAVE.loadVar(_data, "domEasedGripOnce", false)
 	domAttemptedToHypnotizeSubUponEaseGrip = SAVE.loadVar(_data, "domAttemptedToHypnotizeSubUponEaseGrip", false)
 	domWasUndressed = SAVE.loadVar(_data, "domWasUndressed", false)
+	domWasCaptivatedBySubPenis = SAVE.loadVar(_data, "domWasCaptivatedBySubPenis", false)
 
 
 func getSensationColor(_type:String) -> String:
@@ -2465,6 +2571,19 @@ func getPetNames(_petInfo:Dictionary) -> Array:
 
 	return possiblePetNames
 
+func isCharFullyNaked(character:BaseCharacter) -> bool:
+	# char.isFullyNaked() doesn't seem to account for lustState
+
+	var isFullyNaked:bool = false
+
+	for bodypartSlot in BodypartSlot.getAll():
+		if character.isBodypartCovered(bodypartSlot):
+			isFullyNaked = false
+			return isFullyNaked
+
+	isFullyNaked = true
+	return isFullyNaked
+
 func isSubWaitingOnDom() -> bool:
 	var wasClothingRemoved = (subWasUndressed || domWasUndressed)
 
@@ -2482,7 +2601,7 @@ func isSubHesitating() -> bool:
 
 	return isSubHesitating
 
-func getReasonCharCannotPartakeInAnalSexReceiving(_char:BaseCharacter):
+func getReasonCharCannotPartakeInAnalSexReceiving(_char:BaseCharacter, _role:String):
 	if( !_char.hasAnus() ):
 		return RNG.pick([
 			"I have no anus.",
@@ -2501,9 +2620,19 @@ func getReasonCharCannotPartakeInAnalSexReceiving(_char:BaseCharacter):
 			"My anus is currently off-limits."
 		])
 
+	if( (_role == "dom") && _char.hasBoundArms() ):
+		return RNG.pick([
+			"My arms are tied.",
+		])
+
+	if( (_role == "dom") && _char.hasBlockedHands() ):
+		return RNG.pick([
+			"I have restraints on my paws.",
+		])
+
 	return null
 
-func getReasonCharCannotPartakeInAnalSexGiving(_char:BaseCharacter):
+func getReasonCharCannotPartakeInAnalSexGiving(_char:BaseCharacter, _role:String):
 	if( !_char.hasPenis() ):
 		return RNG.pick([
 			"Seems it's not going to work.",
@@ -2526,12 +2655,12 @@ func getReasonCharCannotPartakeInAnalSexGiving(_char:BaseCharacter):
 			"The access to your penis is obstructed.",
 		])
 
-	if( _char.hasBoundArms() ):
+	if( (_role == "dom") && _char.hasBoundArms() ):
 		return RNG.pick([
 			"Your arms are tied.",
 		])
 
-	if( _char.hasBlockedHands() ):
+	if( (_role == "dom") && _char.hasBlockedHands() ):
 		return RNG.pick([
 			"You have restraints on your paws.",
 		])
@@ -2540,14 +2669,14 @@ func getReasonCharCannotPartakeInAnalSexGiving(_char:BaseCharacter):
 
 func getSubAnalSexReceivingPossible() -> bool:
 	return (
-			( getReasonCharCannotPartakeInAnalSexGiving( getRoleChar("dom") ) == null )
-		&& ( getReasonCharCannotPartakeInAnalSexReceiving( getRoleChar("sub") ) == null )
+			( getReasonCharCannotPartakeInAnalSexGiving( getRoleChar("dom"), "dom" ) == null )
+		&& ( getReasonCharCannotPartakeInAnalSexReceiving( getRoleChar("sub"), "sub" ) == null )
 	)
 
 func getSubAnalSexGivingPossible() -> bool:
 	return (
-			( getReasonCharCannotPartakeInAnalSexGiving( getRoleChar("sub") ) == null )
-		&& ( getReasonCharCannotPartakeInAnalSexReceiving( getRoleChar("dom") ) == null )
+			( getReasonCharCannotPartakeInAnalSexGiving( getRoleChar("sub"), "sub" ) == null )
+		&& ( getReasonCharCannotPartakeInAnalSexReceiving( getRoleChar("dom"), "dom" ) == null )
 	)
 
 func recoverSubStamina() -> void:
