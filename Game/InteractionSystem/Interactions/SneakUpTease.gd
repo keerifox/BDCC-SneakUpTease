@@ -198,9 +198,13 @@ func init_text():
 			else:
 				addDisabledAction("Ask: Ride me", "They are not interested.")
 
+			if( !getSubAnalSexReceivingPossible() && !getSubAnalSexGivingPossible() ):
+				var subSurrenderProbability = max( ( 1.0 * ( getSubLustRatio() - 0.80 ) ), -0.01 )
+				addAction("surrender", "Surrender", "They cannot fuck or ride you, but you don't mind having some fun.", "default", subSurrenderProbability, 60, {})
+
 		if(isAbleToRubInReturn):
 			if( !subConsentedToUndressing || wasClothingRemoved ):
-				var subRubAgainstDomProbability = max( ( 1.0 * ( getSubLustRatio() - 0.50 ) ), -0.01 )
+				var subRubAgainstDomProbability = max( ( 1.0 * ( getSubLustRatio() - ( 0.80 if(subConsentedToUndressing) else 0.50 ) ) ), -0.01 )
 
 				if(haveRubbedDomButIntentWasUnclear):
 					subRubAgainstDomProbability = 2.0
@@ -300,6 +304,9 @@ func init_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 		setState("begged_for_anal_sex_receiving", "dom")
 	elif(_id == "beg_for_anal_sex_giving"):
+		domRefusedPenetrationRequestTimes = -1
+		setState("asked_for_something_else", "dom")
+	elif(_id == "surrender"):
 		domRefusedPenetrationRequestTimes = -1
 		setState("asked_for_something_else", "dom")
 	elif(_id == "rub_against_dom"):
