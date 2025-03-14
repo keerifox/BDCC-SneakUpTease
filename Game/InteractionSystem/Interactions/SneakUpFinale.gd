@@ -492,8 +492,8 @@ func sex_top_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 			currentTurnTopOrBottom = "top"
 
 		setState("sex_"+ currentTurnTopOrBottom +"_turn", "dom")
-
-	incl_sex_turn_do(_id, _args, _context)
+	else:
+		incl_sex_turn_do(_id, _args, _context)
 
 	if( bottom.getArousal() >= 1.0 ):
 		bottomCameThisTurn = true
