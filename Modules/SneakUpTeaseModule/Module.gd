@@ -4,6 +4,7 @@ class_name SneakUpTeaseModule
 func getFlags():
 	return {
 		"SneakUpEncounterChanceMillionth": flag(FlagType.Number),
+		"SneakUpEncounterChanceIncrementMillionth": flag(FlagType.Number),
 	}
 
 func _init():

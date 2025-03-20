@@ -214,6 +214,12 @@ func init_text():
 
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
 
+	if( (subResistedTimes == 0) && sub.isPlayer() ):
+		addDisabledAction( "", "" )
+		addDisabledAction( "", getSpacerText() )
+
+		addAction("mod_settings", "Mod Settings", "Configure SneakUpTease mod.", "default", -0.01, 60, {})
+
 func init_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var sub = getRoleChar("sub")
 
@@ -331,6 +337,8 @@ func init_do(_id:String, _args:Dictionary, _context:Dictionary):
 				subConsentedToAnalSexReceiving = true
 
 		setState("rubbed_against_dom", "dom")
+	elif(_id == "mod_settings"):
+		setState("mod_settings", "sub")
 
 
 func after_sub_resisted_text():
@@ -572,6 +580,12 @@ func incl_after_sub_resisted_or_softened_text():
 	else:
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
 
+	if( (subResistedTimes == 1) && dom.isPlayer() ):
+		addDisabledAction( "", "" )
+		addDisabledAction( "", getSpacerText() )
+
+		addAction("mod_settings", "Mod Settings", "Configure SneakUpTease mod.", "default", -0.01, 60, {})
+
 func incl_after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
@@ -678,6 +692,8 @@ func incl_after_sub_resisted_or_softened_do(_id:String, _args:Dictionary, _conte
 		setState("eased_grip", "sub")
 	elif(_id == "just_leave"):
 		setState("left_laying_down", "sub")
+	elif(_id == "mod_settings"):
+		setState("mod_settings", "dom")
 
 
 func undressed_both_text():
@@ -1846,6 +1862,114 @@ func in_pain_do(_id:String, _args:Dictionary, _context:Dictionary):
 		stopMe()
 
 
+func mod_settings_text():
+	incl_mod_setting_value_encounter_chance_text()
+
+	addAction("setting_encounter_chance", "Encounter %", "Change how often you wish to be sneaked up on.", "default", -0.01, 0, {})
+	addAction("return", "Return", "Return to the interaction.", "default", 1.0, 0, {})
+	
+func mod_settings_do(_id:String, _args:Dictionary, _context:Dictionary):
+	var character = getCurrentPawn().getCharacter()
+	var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
+
+	if(_id == "setting_encounter_chance"):
+		setState("mod_setting_encounter_chance", characterRole)
+	elif(_id == "return"):
+		if(characterRole == "dom"):
+			setState("after_sub_resisted", "dom")
+		else:
+			setState("", "sub")
+
+
+func mod_setting_encounter_chance_text():
+	incl_mod_setting_value_encounter_chance_text()
+
+	saynn("\n"+ "Determines how often will other inmates sneak up on you.")
+
+	saynn("Default: Balanced (+0.010% / cell)" +"\n")
+
+	var encounterChanceIncrementMillionth = GM.main.getFlag("SneakUpTeaseModule.SneakUpEncounterChanceIncrementMillionth", 100)
+
+	if(encounterChanceIncrementMillionth > -1):
+		addAction("decrease_chance_2", "-0.002%", "Decrease the chance of being sneaked up on.", "default", -0.01, 0, {})
+		addAction("decrease_chance_1", "-0.001%", "Decrease the chance of being sneaked up on.", "default", -0.01, 0, {})
+	else:
+		addDisabledAction("-0.002%", "Cannot decrease the chance any further.")
+		addDisabledAction("-0.001%", "Cannot decrease the chance any further.")
+
+	addAction("return", "Done", "Return to the list of settings.", "default", 1.0, 0, {})
+
+	if(encounterChanceIncrementMillionth < 500):
+		addAction("increase_chance_1", "+0.001%", "Increase the chance of being sneaked up on.", "default", -0.01, 0, {})
+		addAction("increase_chance_2", "+0.002%", "Increase the chance of being sneaked up on.", "default", -0.01, 0, {})
+	else:
+		addDisabledAction("+0.001%", "Cannot increase the chance any further.")
+		addDisabledAction("+0.002%", "Cannot increase the chance any further.")
+
+func mod_setting_encounter_chance_do(_id:String, _args:Dictionary, _context:Dictionary):
+	var encounterChanceIncrementMillionth = GM.main.getFlag("SneakUpTeaseModule.SneakUpEncounterChanceIncrementMillionth", 100)
+
+	var valueMin:int = -1 if(encounterChanceIncrementMillionth == 0) else 0
+	var valueMax:int = 0 if(encounterChanceIncrementMillionth <= -1) else 500
+
+	if(_id == "decrease_chance_1"):
+		encounterChanceIncrementMillionth -= 10
+	elif(_id == "decrease_chance_2"):
+		encounterChanceIncrementMillionth -= 20
+	elif(_id == "increase_chance_1"):
+		encounterChanceIncrementMillionth += 10
+	elif(_id == "increase_chance_2"):
+		encounterChanceIncrementMillionth += 20
+
+	if(encounterChanceIncrementMillionth < valueMin):
+		encounterChanceIncrementMillionth = valueMin
+	elif(encounterChanceIncrementMillionth > valueMax):
+		encounterChanceIncrementMillionth = valueMax
+
+	if(_id != "return"):
+		GM.main.setFlag("SneakUpTeaseModule.SneakUpEncounterChanceIncrementMillionth", encounterChanceIncrementMillionth)
+	else:
+		var character = getCurrentPawn().getCharacter()
+		var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
+		setState("mod_settings", characterRole)
+
+func incl_mod_setting_value_encounter_chance_text():
+	var encounterChanceIncrementMillionth = GM.main.getFlag("SneakUpTeaseModule.SneakUpEncounterChanceIncrementMillionth", 100)
+
+	var encounterChanceDesc = ""
+
+	if(encounterChanceIncrementMillionth <= -1):
+		encounterChanceDesc = "Never, not even when looking for trouble."
+	elif(encounterChanceIncrementMillionth == 0):
+		encounterChanceDesc = "Only when looking for trouble."
+	elif(encounterChanceIncrementMillionth <= 30):
+		encounterChanceDesc = "Unlikely"
+	elif(encounterChanceIncrementMillionth <= 70):
+		encounterChanceDesc = "Very rare"
+	elif(encounterChanceIncrementMillionth <= 120):
+		encounterChanceDesc = "[color="+ getSensationColor("comfort") +"]Balanced[/color]"
+	elif(encounterChanceIncrementMillionth <= 170):
+		encounterChanceDesc = "Common"
+	elif(encounterChanceIncrementMillionth <= 250):
+		encounterChanceDesc = "[color="+ getSensationColor("pain_moderate") +"]Very common[/color]"
+	else:
+		encounterChanceDesc = "[color="+ getSensationColor("pain_severe") +"]Might get repetitive really quick[/color]"
+
+	saynn(
+			"Encounter chance: "
+		+ encounterChanceDesc
+		+ (
+				(
+						" (+"
+					+ ( "%.3f" % (encounterChanceIncrementMillionth / 10000.0) )
+					+ "% / cell)"
+				)
+			if (encounterChanceIncrementMillionth > 0)
+			else ""
+		)
+	)
+
+
 func incl_post_dom_flirt_text():
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
@@ -1967,11 +2091,6 @@ func incl_post_dom_flirt_text():
 			])
 
 		if( !dom.isBlindfolded() ):
-			if( sub.getInventory().hasEquippedItemWithTag(ItemTag.SexualDeviantInmateUniform) && sub.isBodypartCovered(BodypartSlot.Body) ):
-				possible.append_array([
-					"You know, not all animals are good at discerning colors.. They should have made lilac uniform come with a skirt.. For accessibility..",
-				])
-
 			if(affectionValue > 0.8):
 				possible.append_array([
 					"I'm always happy to see you.. Hope you're also happy to, um.. feel me, hehehe.",
@@ -1982,6 +2101,12 @@ func incl_post_dom_flirt_text():
 				possible.append_array([
 					"I absolutely adore this view.",
 				])
+
+			if( RNG.chance(5) ):
+				if( sub.getInventory().hasEquippedItemWithTag(ItemTag.SexualDeviantInmateUniform) && sub.isBodypartCovered(BodypartSlot.Body) ):
+					possible.append_array([
+						"You know, not all animals are good at discerning colors.. They should have made lilac uniform come with a skirt.. For accessibility..",
+					])
 
 			possible.append_array([
 				"You're so "+ sub_handsome +"..",
@@ -2579,6 +2704,17 @@ func getPetNames(_petInfo:Dictionary) -> Array:
 		possiblePetNames.append_array(["creature", "pet"])
 
 	return possiblePetNames
+
+func getSpacerText() -> String:
+	if( RNG.chance(90) ):
+		return ""
+
+	return RNG.pick([
+		"Space space wanna go to space yes please space.",
+		"Space space going to space can't wait.",
+		"Oh oh this is space. We're in space.",
+		"Don't like space, don't like space.",
+	])
 
 func isCharFullyNaked(character:BaseCharacter) -> bool:
 	# char.isFullyNaked() doesn't seem to account for lustState

@@ -1,5 +1,8 @@
 extends EventBase
 
+# If the chance is increased by 100 (0.01%) per cell traveled, the
+# initial value being set to -25000 (-2.5%) means the encounter chance
+# will remain negative until (25000 / 100) = 250 cells have been traveled
 const CHANCE_MILLIONTH_INITIAL_VALUE = -25000
 
 func _init():
@@ -13,10 +16,15 @@ func react(_triggerID, _args):
 	var isLookingForTrouble = (_triggerID == Trigger.PCLookingForTrouble)
 
 	if(!(WorldPopulation.Inmates in GM.pc.getLocationPopulation())):
-		return
+		return false
+
+	var chanceAdditiveIncrementMillionth = GM.main.getFlag("SneakUpTeaseModule.SneakUpEncounterChanceIncrementMillionth", 100)
+
+	if( chanceAdditiveIncrementMillionth <= ( -1 if(isLookingForTrouble) else 0 ) ):
+		return false
 
 	var chanceAdditiveMillionth = GM.main.getFlag("SneakUpTeaseModule.SneakUpEncounterChanceMillionth", CHANCE_MILLIONTH_INITIAL_VALUE)
-	chanceAdditiveMillionth += 100
+	chanceAdditiveMillionth += chanceAdditiveIncrementMillionth
 	GM.main.setFlag("SneakUpTeaseModule.SneakUpEncounterChanceMillionth", chanceAdditiveMillionth)
 
 	var chanceToStartInteraction:float = chanceAdditiveMillionth / 10000.0
