@@ -676,9 +676,44 @@ func refused_cuddles_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 
 func dom_after_sex_text():
+	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
+
+	var subPersonalityMeanScore = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean = subPersonalityMeanScore > 0.4
+
 	var eventLines = getEventLinesForCurrentSexPose_afterSex()
 
 	saynn(RNG.pick(eventLines))
+
+	var domDialogueChance = 10 if( isPlayerInvolved() ) else 50
+
+	if( sub.isPlayer() ):
+		domDialogueChance = 100 - domDialogueChance
+
+	var dialogueLines = []
+
+	if( RNG.chance(domDialogueChance) ):
+		dialogueLines = getDialogueLines_afterSex(dom, "dom")
+		saynn("[say=dom]"+ RNG.pick(dialogueLines) +"[/say]")
+	else:
+		var subSeekingAffirmationChance = 0 if(subIsMean) else 20
+
+		if( RNG.chance(subSeekingAffirmationChance) ):
+			dialogueLines = getDialogueLines_afterSexSubSeekingAffirmation(sub)
+			saynn("[say=sub]"+ RNG.pick(dialogueLines) +"[/say]")
+
+			if( RNG.chance(60) ):
+				dialogueLines = getDialogueLines_afterSexSubSeekingAffirmationReaction(dom)
+				saynn("[say=dom]"+ RNG.pick(dialogueLines) +"[/say]")
+			else:
+				saynn( RNG.pick([
+					"{dom.You} {dom.youVerb('reach', 'reaches')} towards {sub.your} hair, petting it softly, without a word leaving {dom.yourHis} mouth.",
+				]) )
+		else:
+			dialogueLines = getDialogueLines_afterSex(sub, "sub")
+			saynn("[say=sub]"+ RNG.pick(dialogueLines) +"[/say]")
 
 	addAction("leave", "Leave", "Leave them here.", "default", 1.0, 60, {})
 
@@ -2472,8 +2507,12 @@ func getBaseLinesForCurrentSexPose_topCameOutside() -> Array:
 	]
 
 func getEventLinesForCurrentSexPose_afterSex() -> Array:
+	var dom = getRoleChar("dom")
+
+	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
+
 	return [
-		"{dom.You} {dom.youVerb('feel')} like {dom.youHe} {dom.youVerb('have', 'has')} had enough fucking {sub.you}.",
+		"{dom.You} {dom.youVerb('feel')} like "+ dom_you_veHe_s +" had enough fucking {sub.you}.",
 	]
 
 func getFlavorLinesForCurrentSexPose_fucking() -> Array:
@@ -2761,6 +2800,245 @@ func getDialogueLines_offerCuddles(_character:BaseCharacter, _characterRole:Stri
 		dialogueLines.append_array([
 			"Would you like to hold me close for a little while?",
 		])
+
+	return dialogueLines
+
+func getDialogueLines_afterSex(_character:BaseCharacter, _characterRole:String) -> Array:
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop = ( _character == getTopChar() )
+
+	var partnerCharacter = getBottomChar() if(characterIsTop) else getTopChar()
+	var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+
+	var characterPersonalityMeanScore = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean = characterPersonalityMeanScore > 0.4
+
+	var characterPersonalitySubbyScore = characterPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
+	var characterIsSubby = characterPersonalitySubbyScore > 0.4
+	var characterIsDommy = characterPersonalitySubbyScore < -0.4
+
+	var characterLustInterests:LustInterests = _character.getLustInterests()
+	var characterLustInterestInStuffedAss = characterLustInterests.getInterestValue(InterestTopic.StuffedAss)
+	var characterLustInterestInCoveredInCum = characterLustInterests.getInterestValue(InterestTopic.CoveredInCum)
+
+	var affectionValue:float = characterPawn.getAffection(partnerPawn)
+
+	var dialogueLines = []
+
+	if(!characterIsMean):
+		if( ( characterIsSubby && (_characterRole == "dom") ) || ( characterIsDommy && (_characterRole == "sub") ) ):
+			dialogueLines.append_array([
+				"I don't take on this role often, so you must be quite the lucky creature~",
+			])
+
+	if(_characterRole == "dom"):
+		if(characterIsMean):
+			if( ( partnerCharacter.getArousal() >= 0.70 ) && partnerCharacter.hasReachablePenis() ):
+				dialogueLines.append_array([
+					"Hm, still got your boner? Too bad, slut, it seems that you're keeping it.",
+					"Good fucktoy~. Go find someone to take care of that bone of yours.",
+				])
+
+		if(topCameTimes >= 5):
+			dialogueLines.append_array([
+				"I can still keep going~. But I'll catch you later, when you least expect it.",
+			])
+
+			if(characterIsTop):
+				dialogueLines.append_array([
+					"Each time you feel weak in the knees I want you to think of me.",
+				])
+
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"That's more than you deserve, now get lost.",
+				])
+
+				if(characterIsTop):
+					if(characterLustInterestInStuffedAss >= 0.5):
+						dialogueLines.append_array([
+							"Heard you're a cum dump, but now you actually look like one.",
+						])
+
+					if(characterLustInterestInCoveredInCum >= 0.5):
+						dialogueLines.append_array([
+							"Hope you enjoy being covered in thick ropes, because you don't get to clean for the rest of the day.",
+						])
+			else:
+				dialogueLines.append_array([
+					"Huff.. You're quite charming, always tempting me to keep going..",
+					"Hope I surpassed your expectations, hun~",
+				])
+		elif(topCameTimes >= 2):
+			dialogueLines.append_array([
+				"Might wanna get yourself ready for another round. Even if you slip past my paws, someone is about to make good use of you~",
+				"If you're ever lusting for more, you know where to find me. Though next time I won't let you leave so easily~",
+			])
+
+			if( abs(affectionValue) < 0.20 ):
+				dialogueLines.append_array([
+					"The name's {dom.name}. You better remember it.",
+				])
+
+			if( RNG.chance(5) ):
+				if(characterIsTop):
+					dialogueLines.append_array([
+						"Enjoy your filler content.",
+					])
+
+			if(characterIsDommy):
+				dialogueLines.append_array([
+					"I'm letting you go, but you still belong to me. Know your place and kneel when you see me.",
+				])
+
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"You ain't getting any more of me, now get the fuck out of my sight.",
+					"I've had my share of fun. I don't care if you did, get lost.",
+				])
+
+				if(!characterIsTop):
+					dialogueLines.append_array([
+						"Good service slut.",
+					])
+			else:
+				dialogueLines.append_array([
+					"Fuck, that felt good..",
+					"You're the best dessert~",
+					"You've earned yourself some rest, "+ RNG.pick(subPetNames) +".",
+				])
+
+				if(characterIsTop):
+					dialogueLines.append_array([
+						"Huff.. I've got more treats for you, next time we meet.",
+					])
+		else:
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"That's all you're getting this time. I want to see you crawl over the place craving for more.",
+				])
+			else:
+				dialogueLines.append_array([
+					"Hope you enjoyed the quickie~",
+				])
+	else:
+		if(topCameTimes >= 8):
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"F- Fuck, I'm surprised you know how to stop.",
+				])
+			else:
+				dialogueLines.append_array([
+					"F- Fuck, my whole body feels so weak..",
+					"Everything hurts.. but.. in a good way..",
+				])
+
+				if(!characterIsTop):
+					dialogueLines.append_array([
+						"Hhhjff.. I- I think I'm going to feel phantom fucked for the rest of the week after this..",
+					])
+		elif(topCameTimes >= 5):
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"Huff.. Is that all you've got?",
+					"Bitch.. You're full of surprises, huh?",
+				])
+			else:
+				dialogueLines.append_array([
+					"Oh.. Wow..",
+					"Ahh.. F- Fuck, that was great..",
+				])
+
+				if(characterIsTop):
+					dialogueLines.append_array([
+						"F- Fuck.. Ride me any day..",
+					])
+		elif(topCameTimes >= 2):
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"That was mediocre at best.",
+					"For a slut, that wasn't half bad..",
+				])
+
+				if(characterIsDommy):
+					if(!characterIsTop):
+						dialogueLines.append_array([
+							"Bah. Next time your ass is stuck in the stocks I'll show you how it's done.",
+						])
+			else:
+				dialogueLines.append_array([
+					"We haven't parted ways yet, but I'm already imagining meeting you again..",
+					"Mmhh, I really needed that..",
+					"H- How does this keep happening to me..",
+					"Huff.. I loved the pose.",
+				])
+
+				if(affectionValue >= 0.60):
+					dialogueLines.append_array([
+						"Huff.. You always know how to give me a good time~",
+					])
+		else:
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"That wasn't worth the time. Whatever.",
+					"Ahh- Wait, whore, is that all?",
+					"I haven't paid you any credits but I still feel scammed.",
+				])
+			else:
+				dialogueLines.append_array([
+					"Mhff, that left me very needy..",
+				])
+
+	return dialogueLines
+
+func getDialogueLines_afterSexSubSeekingAffirmation(_character:BaseCharacter) -> Array:
+	var dialogueLines = []
+
+	if(topCameTimes >= 8):
+		dialogueLines.append_array([
+			"I- I can't feel half of my b- body.. I h- hope I did well..",
+		])
+	elif(topCameTimes >= 5):
+		dialogueLines.append_array([
+			"H- Huff.. Did I do a good job? Please tell me I did..",
+		])
+	elif(topCameTimes >= 2):
+		dialogueLines.append_array([
+			"P- Please tell me I did well.",
+			"P- Please tell me I was a good "+ RNG.pick(subPetNames) +"..",
+		])
+	else:
+		dialogueLines.append_array([
+			"D- Did I do something wrong? That was rather brief..",
+			"W- Was I.. not good enough? I expected us to have some m- more fun..",
+		])
+
+	return dialogueLines
+
+func getDialogueLines_afterSexSubSeekingAffirmationReaction(_character:BaseCharacter) -> Array:
+	var characterPawn = getRolePawn("dom")
+
+	var characterPersonalityMeanScore = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean = characterPersonalityMeanScore > 0.4
+
+	var affectionValue:float = characterPawn.getAffection( getRolePawn("sub") )
+
+	var dialogueLines = []
+
+	if(characterIsMean):
+		dialogueLines.append_array([
+			"You were just another whore. But I would use you again.",
+			"You hardly pleased me. Now scram. Keep getting yourself in hapless situations, and maybe I'll consider making a proper fucktoy out of you.",
+		])
+	else:
+		dialogueLines.append_array([
+			"You did "+ RNG.pick(["good", "great", "well"]) +", "+ RNG.pick(subPetNames) +".",
+		])
+
+		if(affectionValue >= 0.20):
+			dialogueLines.append_array([
+				"You're a pleasure, {sub.name}.",
+			])
 
 	return dialogueLines
 
