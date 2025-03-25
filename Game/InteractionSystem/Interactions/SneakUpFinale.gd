@@ -1126,6 +1126,7 @@ func dom_choosing_leash_walking_variant_do(_id:String, _args:Dictionary, _contex
 
 func dom_leash_walking_sub_text():
 	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
 
@@ -1198,6 +1199,10 @@ func dom_leash_walking_sub_text():
 			])
 
 		saynn( RNG.pick(possible) )
+
+		if( RNG.chance(10) ):
+			possible = getDialogueLines_walkingLeashedOnAllFours(sub)
+			saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
 	elif(!domLeashedWalkOnAllFours):
 		possible.append_array([
 			"{sub.You} {sub.youAre} being pulled around by {dom.you} as {dom.youHe} {dom.youVerb('hold')} {sub.youHim} on a leash.",
@@ -3067,6 +3072,30 @@ func getDialogueLines_attachedLeashForWalk(_character:BaseCharacter) -> Array:
 		dialogueLines.append_array([
 			"You're mine now~",
 			"Everyone needs to see how good of a pet you are~",
+		])
+
+	return dialogueLines
+
+func getDialogueLines_walkingLeashedOnAllFours(_character:BaseCharacter) -> Array:
+	var sub = getRoleChar("sub")
+
+	var subSpecies = sub.getSpecies()
+
+	var dialogueLines = [
+		"I'm.. a pet..",
+		"*"+ RNG.pick(subPetNames) +" noises*",
+	]
+
+	if( subSpecies.has(Species.Canine) ):
+		dialogueLines.append_array([
+			"Woof!",
+			"Bark!",
+		])
+
+	if( subSpecies.has(Species.Feline) ):
+		dialogueLines.append_array([
+			"Mmhh.. Meow?",
+			"Mrow..",
 		])
 
 	return dialogueLines
