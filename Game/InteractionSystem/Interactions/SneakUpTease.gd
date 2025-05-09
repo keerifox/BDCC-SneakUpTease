@@ -215,8 +215,9 @@ func init_text():
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
 
 	if( (subResistedTimes == 0) && sub.isPlayer() ):
-		addDisabledAction( "", "" )
-		addDisabledAction( "", getSpacerText() )
+		var spacerActionsCount = 4 - len(actionBuffer)
+		for n in spacerActionsCount:
+			addDisabledAction( "", getSpacerText() if((n + 1) == spacerActionsCount) else "" )
 
 		addAction("mod_settings", "Mod Settings", "Configure SneakUpTease mod.", "default", -0.01, 60, {})
 
@@ -580,9 +581,10 @@ func incl_after_sub_resisted_or_softened_text():
 	else:
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
 
-	if( (subResistedTimes == 1) && dom.isPlayer() ):
-		addDisabledAction( "", "" )
-		addDisabledAction( "", getSpacerText() )
+	if( (subResistedOrSoftenedTimes == 1) && dom.isPlayer() ):
+		var spacerActionsCount = 4 - len(actionBuffer)
+		for n in spacerActionsCount:
+			addDisabledAction( "", getSpacerText() if((n + 1) == spacerActionsCount) else "" )
 
 		addAction("mod_settings", "Mod Settings", "Configure SneakUpTease mod.", "default", -0.01, 60, {})
 
