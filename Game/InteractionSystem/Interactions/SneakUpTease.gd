@@ -2007,7 +2007,7 @@ func incl_post_dom_flirt_text():
 		else:
 			possible.append("Don't worry, I don't bite- Oh.. I suppose I do, actually~")
 
-	if(subIsInmate):
+	if( subIsInmate && RNG.chance(10) ):
 		possible.append_array([
 			"If I knew there's hotties like you imprisoned in the middle of nowhere, maybe I would have gotten myself caught much sooner..",
 			"It should be illegal to be this hot.. Wait, don't tell me-",
@@ -2065,7 +2065,7 @@ func incl_post_dom_flirt_text():
 					"I've been hearing good things about you..",
 				])
 
-			if( ( subWasUndressed || sub.isFullyNaked() ) && ( sub.getStat(Stat.Sexiness) >= 60 ) ):
+			if( ( subWasUndressed || sub.isFullyNaked() ) && ( sub.getStat(Stat.Sexiness) >= 60 ) && RNG.chance(5) ):
 				possible.append_array([
 					"Gosh, just how many points did you invest in sexiness..",
 				])
