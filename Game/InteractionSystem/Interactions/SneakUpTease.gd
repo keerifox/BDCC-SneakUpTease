@@ -576,7 +576,7 @@ func incl_after_sub_resisted_or_softened_text():
 
 	if(!subWasPinnedToTheGround):
 		if(!domEasedGripOnce && !subConsentedToUndressing):
-			var domEaseGripProbability = 0.1 if ( !domIsMean && (subResistedOrSoftenedTimes >= 2) ) else -0.01
+			var domEaseGripProbability = 0.1 if ( !domIsMean && (subResistedOrSoftenedTimes >= 2) && (subResistedTimes <= 6) && RNG.chance(20) ) else -0.01
 			addAction("ease_grip", "Ease your grip", "Allow them to break free.", "default", domEaseGripProbability, 60, {})
 	else:
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
