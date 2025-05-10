@@ -176,11 +176,11 @@ func getPreviewLineForRole(_role:String) -> String:
 	
 func getIncompleteSpeciesFullName(species: Array):
 	if( species.size() == 0 ):
-		return "Creature"
+		return "Wild"
 
 	var specie = GlobalRegistry.getSpecies( RNG.pick(species) )
 
 	if(specie == null):
-		return "Creature"
+		return "Wild"
 
 	return specie.getVisibleName()
