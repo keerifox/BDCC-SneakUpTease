@@ -34,6 +34,7 @@ var bottomCameTimes:int = 0
 var currentSexPoseId:String = "none"
 var currentTurnTopOrBottom:String = "nobody"
 var hasSexEndedEarly:bool = false
+var tfResultText:String = ""
 
 const ANAL_SEX_RECEIVING_POSE_MATING_PRESS = {
 	id = "mating_press",
@@ -535,12 +536,31 @@ func ended_sex_early_text():
 	var partnerPawn = getRolePawn(partnerRole)
 	var characterRole = "sub" if(partnerRole == "dom") else "dom"
 	var character = getRoleChar(characterRole)
+	var characterTopOrBottom = "top" if( characterRole == getTopRole() ) else "bottom"
 
 	var partnerPersonalityMeanRatio = ( partnerPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 }) + 1.0 ) / 2.0
 
 	var possible = []
 
-	if(characterRole == "dom"):
+	if(tfResultText != ""):
+		var impossibleToContinueWhat:String = (
+				( "using" if(characterTopOrBottom == "bottom") else "being used by" )
+			if(domIsBottoming)
+			else ( "pounding" if(characterTopOrBottom == "top") else "being pounded by" )
+		)
+
+		saynn( RNG.pick([
+			"As waves of pleasure rock over {"+characterRole+".youHim}, {"+characterRole+".you} {"+characterRole+".youVerb('begin')} to notice certain changes in {"+characterRole+".yourHis} body that make it impossible to continue "+ impossibleToContinueWhat +" {"+partnerRole+".you}.",
+		]) )
+
+		possible = getDialogueLines_endedSexEarlyDueToTransformation(character, characterRole)
+		if( possible.size() > 0 ):
+			saynn("[say="+characterRole+"]"+ RNG.pick(possible) +"[/say]")
+
+		possible = getDialogueLines_endedSexEarlyDueToTransformationReaction(partner, partnerRole)
+		if( possible.size() > 0 ):
+			saynn("[say="+partnerRole+"]"+ RNG.pick(possible) +"[/say]")
+	elif(characterRole == "dom"):
 		var dom = character
 		var sub = partner
 
@@ -1394,7 +1414,10 @@ func incl_sex_turn_text():
 
 	incl_toggleable_mouth_play_text()
 
-	incl_sex_turn_dialogue_text()
+	if(tfResultText != ""):
+		saynn(tfResultText)
+	else:
+		incl_sex_turn_dialogue_text()
 
 	if(isDomTurn && topCameThisTurn):
 		addAction("continue", "Keep going", "Just continue doing what you're doing.", "default", 1.0, 60, {})
@@ -1438,6 +1461,15 @@ func incl_sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var bottom = getBottomChar()
 
 	var nextTurnTopOrBottom = ( "top" if(currentTurnTopOrBottom == "bottom") else "bottom" )
+	
+	var tfRequiresEndingInteraction:bool = handleTransformation({ nextTurnTopOrBottom = nextTurnTopOrBottom, })
+
+	if(tfRequiresEndingInteraction == true):
+		hasSexEndedEarly = true
+
+		var partnerDomOrSubString = getBottomRole() if(currentTurnTopOrBottom == "bottom") else getTopRole()
+		setState("ended_sex_early", partnerDomOrSubString)
+		return
 
 	incl_toggleable_mouth_play_do(_id, _args, _context)
 
@@ -1874,6 +1906,7 @@ func saveData():
 	data["currentSexPoseId"] = currentSexPoseId
 	data["currentTurnTopOrBottom"] = currentTurnTopOrBottom
 	data["hasSexEndedEarly"] = hasSexEndedEarly
+	data["tfResultText"] = tfResultText
 
 	data["topCameInsideThisTurn"] = topCameInsideThisTurn
 	data["topCameInsidePreviousTurn"] = topCameInsidePreviousTurn
@@ -1912,6 +1945,7 @@ func loadData(_data):
 	currentSexPoseId = SAVE.loadVar(_data, "currentSexPoseId", "none")
 	currentTurnTopOrBottom = SAVE.loadVar(_data, "currentTurnTopOrBottom", "nobody")
 	hasSexEndedEarly = SAVE.loadVar(_data, "hasSexEndedEarly", false)
+	tfResultText = SAVE.loadVar(_data, "tfResultText", "")
 
 	topCameInsideThisTurn = SAVE.loadVar(_data, "topCameInsideThisTurn", false)
 	topCameInsidePreviousTurn = SAVE.loadVar(_data, "topCameInsidePreviousTurn", false)
@@ -1990,6 +2024,49 @@ func increaseArousal(_info:Dictionary):
 	elif(nextTurnTopOrBottom == "top"):
 		if( bottom.getArousal() >= 1.0 ):
 			bottom.setArousal( min( lerp(bottomArousalBeforeIncrease, 1.0, 0.5), 0.994 ) )
+
+func handleTransformation(_info:Dictionary):
+	var tfRequiresEndingInteraction:bool = false
+
+	var nextTurnTopOrBottom = _info.nextTurnTopOrBottom
+	var character = getBottomChar() if(nextTurnTopOrBottom == "bottom") else getTopChar()
+	var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
+
+	tfResultText = ""
+
+	var dialogueLines = []
+
+	var tfHolder:TFHolder = character.getTFHolder()
+
+	if( (tfHolder != null) && tfHolder.hasPendingTransformations() ):
+		var tfResult:Dictionary = tfHolder.doFirstPendingTransformation({}, true)
+
+		if( tfResult.has("text") && ( tfResult["text"] != "" ) ):
+			if(tfResultText != ""):
+				tfResultText += "\n\n"
+
+			tfResultText += (
+					"{"+characterRole+".Your} body is suddenly [b]changing[/b]! "
+				+ tfResult["text"]
+			)
+
+			if( tfResult.has("say") && ( tfResult["say"] != "" ) ):
+				dialogueLines.append( tfResult["say"] )
+
+	if( dialogueLines.size() > 0 ):
+		tfResultText += (
+				"\n\n"
+			+ "[say="+characterRole+"]"
+			+ RNG.pick(dialogueLines)
+			+ "[/say]"
+		)
+
+	tfRequiresEndingInteraction = (
+			(nextTurnTopOrBottom == "top")
+		&& ( getTopChar().hasReachablePenis() == false )
+	)
+
+	return tfRequiresEndingInteraction
 
 func getRelevantSexPoses():
 	if(domIsBottoming):
@@ -2746,6 +2823,114 @@ func getDialogueLines_emphasizeTightness(_character:BaseCharacter) -> Array:
 		dialogueLines.append_array([
 			"Didn't expect you to be so tight~"
 		])
+
+	return dialogueLines
+
+func getDialogueLines_endedSexEarlyDueToTransformation(_character:BaseCharacter, _characterRole:String) -> Array:
+	var characterPawn = getRolePawn(_characterRole)
+
+	var characterPersonalityMeanScore = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean = characterPersonalityMeanScore > 0.4
+
+	var characterInterestInTFReceiving = characterPawn.scoreFetishMax({ Fetish.TFReceiving: 1.0 })
+	var characterLikesTFReceiving = characterInterestInTFReceiving >= 0.5
+	var characterDislikesTFReceiving = characterInterestInTFReceiving <= -0.5
+
+	# Used by both doms and subs
+
+	var dialogueLines = []
+
+	if(characterLikesTFReceiving):
+		if(characterIsMean):
+			dialogueLines.append_array([
+				"About the fucking time they kicked in. Meet the new me.",
+				"That's all you're getting, whore. You don't deserve my new shape.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Oooh, I have transformed!",
+				"Ohh, I've been waiting for this to happen! Sorry about the timing though~",
+				"I wasn't ready for this to happen now.. But f-fuckk, I love changing..",
+				"I can never predict when this happens.. But that's also what makes it so exciting~",
+			])
+	elif(!characterDislikesTFReceiving):
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				"Oh.. I think.. something about my body has changed..",
+				"Awhh, I thought I still had time..",
+				"That drug.. it kicked in so fast..",
+			])
+
+		dialogueLines.append_array([
+			"Huh.. My body feels.. different..",
+			"This is.. a little unexpected.. Hmph.",
+		])
+	else:
+		if(characterIsMean):
+			dialogueLines.append_array([
+				"W- What the fuck?",
+				"I fucking hate everything about this.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Nooo, why does it have to happen now??",
+				"Arghh, I never asked for this to happen..",
+				"Why now.. Why does it have to happen to me at all, f-fuck..",
+				"I really regret some of my decisions lately..",
+			])
+
+	return dialogueLines
+
+func getDialogueLines_endedSexEarlyDueToTransformationReaction(_character:BaseCharacter, _characterRole:String) -> Array:
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop = ( _character == getTopChar() )
+
+	var characterPersonalityMeanScore = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean = characterPersonalityMeanScore > 0.4
+
+	#var partnerCharacter = getBottomChar() if(characterIsTop) else getTopChar()
+	var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+
+	var partnerInterestInTFReceiving = partnerPawn.scoreFetishMax({ Fetish.TFReceiving: 1.0 })
+	var partnerLikesTFReceiving = partnerInterestInTFReceiving >= 0.5
+	var partnerDislikesTFReceiving = partnerInterestInTFReceiving <= -0.5
+
+	# Used by both doms and subs
+
+	var dialogueLines = []
+
+	if(characterIsMean):
+		dialogueLines.append_array([
+			"I couldn't care less how you look like.",
+			"You still look like a whore.",
+		])
+
+	if(partnerLikesTFReceiving || !partnerDislikesTFReceiving):
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				( ( "You look" if( !_character.isBlindfolded() ) else "Your touch is" ) +" just as charming, darling." ),
+			])
+
+	if(partnerLikesTFReceiving):
+		if(characterIsMean):
+			dialogueLines.append_array([
+				"Why the fuck are you so pent up about it?",
+			])
+		else:
+			dialogueLines.append_array([
+				"I love how pent up you are about it~",
+			])
+	elif(!partnerDislikesTFReceiving):
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				"I'm sure you'll love this form of yours~",
+			])
+	else:
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				( "Hehee, I'm sure there are still plenty of ways to "+( "use" if(_characterRole == "dom") else "serve" )+" you~" ),
+				"You're fine~. Whether you get used to it, or find a way to shift back, I'd still be eager to explore your body~",
+			])
 
 	return dialogueLines
 

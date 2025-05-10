@@ -215,7 +215,7 @@ func init_text():
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
 
 	if( (subResistedTimes == 0) && sub.isPlayer() ):
-		var spacerActionsCount = 4 - len(actionBuffer)
+		var spacerActionsCount = 4 - actionBuffer.size()
 		for n in spacerActionsCount:
 			addDisabledAction( "", getSpacerText() if((n + 1) == spacerActionsCount) else "" )
 
@@ -582,7 +582,7 @@ func incl_after_sub_resisted_or_softened_text():
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
 
 	if( (subResistedOrSoftenedTimes == 1) && dom.isPlayer() ):
-		var spacerActionsCount = 4 - len(actionBuffer)
+		var spacerActionsCount = 4 - actionBuffer.size()
 		for n in spacerActionsCount:
 			addDisabledAction( "", getSpacerText() if((n + 1) == spacerActionsCount) else "" )
 
