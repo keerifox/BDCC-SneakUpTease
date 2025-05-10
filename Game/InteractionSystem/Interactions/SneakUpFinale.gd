@@ -126,7 +126,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 			},
 		},
 		tags = [
-			"bottomSlammedIntoWall",
+			"bottomFacingTop", "bottomSlammedIntoWall",
 		],
 	},
 ]
@@ -2402,7 +2402,7 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "stand_and_carry"):
 		return [
-			"{dom.You} {dom.youVerb('turn')} {sub.you} towards {dom.yourself}"+ ( ", forcing a wet kiss onto {sub.yourHis} lips, and reaching" if( !dom.isOralBlocked() && !sub.isOralBlocked() ) else " and reach" ) +" around to grab {sub.yourHis} rear, swiftly lifting {sub.youHim} up in the air, and [color="+ getSensationColor("pain_severe") +"]impatiently slamming {sub.youHim} into the nearest wall[/color]. As "+ sub_you_reHe_s +" helplessly squished between {dom.you} and the wall in an incredibly hot and vulnerable pose, {dom.youHe} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
+			"{dom.You} {dom.youVerb('turn')} {sub.you} towards {dom.yourself}"+ ( ", forcing a wet kiss onto {sub.yourHis} lips, and reaching" if( !dom.isOralBlocked() && !sub.isOralBlocked() ) else " and {dom.youVerb('reach', 'reaches')}" ) +" around to grab {sub.yourHis} rear, swiftly lifting {sub.youHim} up in the air, and [color="+ getSensationColor("pain_severe") +"]impatiently slamming {sub.youHim} into the nearest wall[/color]. As "+ sub_you_reHe_s +" helplessly squished between {dom.you} and the wall in an incredibly hot and vulnerable pose, {dom.youHe} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
 			(
 					"The movements that occurred afterwards have been largely lost to passion. {sub.You} felt [color="+ getSensationColor("pain_severe") +"]sudden but momentary pain in {sub.yourHis} spine[/color] as it was forcibly slammed against a flat, rough surface. "
 				+ (
@@ -2428,7 +2428,7 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "low_doggy"):
 		return [
-			"{dom.You} {dom.youVerb('grab')} one of {sub.your} thighs, pulling it just a little closer to {dom.yourself}. The "+( "sight alone already leaves" if( !dom.isBlindfolded() ) else "curves alone already leave" )+" {dom.youHim} drooling. {dom.YouHe} "+ dom_gently +" {dom.youVerb('pin')} {sub.yourHis} spine to the floor with {dom.yourHis} other paw, and brush the tip of {dom.yourHis} "+ top_penis +" over the sensitive edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", as "+ dom_you_reHe_s +" about to claim what's "+ dom_yoursHis +".",
+			"{dom.You} {dom.youVerb('grab')} one of {sub.your} thighs, pulling it just a little closer to {dom.yourself}. The "+( "sight alone already leaves" if( !dom.isBlindfolded() ) else "curves alone already leave" )+" {dom.youHim} drooling. {dom.YouHe} "+ dom_gently +" {dom.youVerb('pin')} {sub.yourHis} spine to the floor with {dom.yourHis} other paw, and {dom.youVerb('brush', 'brushes')} the tip of {dom.yourHis} "+ top_penis +" over the sensitive edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", as "+ dom_you_reHe_s +" about to claim what's "+ dom_yoursHis +".",
 			( domCommandingToGetIntoPose + "{sub.You} {sub.youVerb('respond')} with a quiet whine, surrendering {sub.yourHis} body further down into the floor, and "+ sub_obediently +" raising {sub.yourHis} rear for {dom.you} to have {dom.yourHis} way with {sub.youHim}. {dom.YourHis} "+ top_penis +" throbs "+ ( ( "as {dom.yourHis} paws hungrily roam near {sub.yourHis} willingly presented "+ bottom_drippy_anus +"." ) if( dom.isBlindfolded() or RNG.chance(50) ) else ( "from the sight of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +" being willingly presented to {dom.youHim}." ) ) ),
 		]
 
