@@ -75,6 +75,13 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 		id = "full_nelson",
 		name = "Full nelson",
 		stageScene = StageScene.SexFullNelson,
+		requirements = {
+			strengthStat = {
+				valueMin = 3,
+				valueFromSubLevel = 0.60, # at high thickness
+				descIfInsufficient = "You lack strength to carry them",
+			},
+		},
 		tags = [
 			"toggleableMouthPlay",
 		],
@@ -84,7 +91,7 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 	ANAL_SEX_RECEIVING_POSE_RAISED_LEG,
 	{
 		id = "against_a_wall",
-		name = "Against a wall",
+		name = "Paws to the wall",
 		stageScene = StageScene.SexStanding,
 		fastAnimationMinArousal = 0.90,
 		requirements = {
@@ -106,6 +113,22 @@ const ANAL_SEX_RECEIVING_STANDING_POSES = [
 			"bottomUnboundArmsGraspingAtWall", "toggleableMouthPlay",
 		],
 	},
+	{
+		id = "stand_and_carry",
+		name = "Stand and carry",
+		stageScene = StageScene.SexAgainstWall,
+		requirements = {
+			wallsNearby = true,
+			strengthStat = {
+				valueMin = 3,
+				valueFromSubLevel = 0.60, # at high thickness
+				descIfInsufficient = "You lack strength to carry them",
+			},
+		},
+		tags = [
+			"bottomSlammedIntoWall",
+		],
+	},
 ]
 
 const ANAL_SEX_RECEIVING_PINNED_POSES = [
@@ -115,7 +138,7 @@ const ANAL_SEX_RECEIVING_PINNED_POSES = [
 		stageScene = StageScene.SexBehind,
 		oddsScore = 3.0,
 		tags = [
-			"bottomBelowTop",
+			"bottomBelowTop", "toggleableMouthPlay",
 		],
 	},
 	{
@@ -133,7 +156,7 @@ const ANAL_SEX_RECEIVING_PINNED_POSES = [
 		stageScene = StageScene.SexLowDoggy,
 		oddsScore = 3.0,
 		tags = [
-			"bottomBelowTop", "bottomUnboundArmsSupportingChest",
+			"bottomBelowTop", "bottomUnboundArmsSupportingChest", "toggleableMouthPlay",
 		],
 	},
 	ANAL_SEX_RECEIVING_POSE_MATING_PRESS,
@@ -285,8 +308,9 @@ func dom_choosing_sex_pose_text():
 		var unmetRequirements:Array = getSexPoseUnmetRequirements(sexPose)
 
 		if( unmetRequirements.size() == 0 ):
+			var sexPoseActionDescPrefix = getSexPoseActionDescPrefix(sexPose)
 			var domProbabilityToSelectPose = sexPose.oddsScore if( sexPose.has("oddsScore") ) else 1.0
-			addAction( ("select_sex_pose_" + sexPose.id), sexPose.name, "Picture this pose to decide if this is what you want.", "default", domProbabilityToSelectPose, 60, {} )
+			addAction( ("select_sex_pose_" + sexPose.id), sexPose.name, ( sexPoseActionDescPrefix+ "Picture this pose to decide if this is what you want." ), "default", domProbabilityToSelectPose, 60, {} )
 		else:
 			addDisabledAction(sexPose.name, Util.join(unmetRequirements))
 
@@ -316,6 +340,9 @@ func dom_choosing_sex_pose_do(_id:String, _args:Dictionary, _context:Dictionary)
 		for availablePose in availablePoses:
 			if( _id == ("select_sex_pose_" + availablePose.id) ):
 				currentSexPoseId = availablePose.id
+
+	if(stateIdSuffix == "_done"):
+		incl_pre_getting_into_pose_do()
 
 	setState( ("dom_choosing_sex_pose" + stateIdSuffix), "dom" )
 
@@ -347,6 +374,7 @@ func dom_choosing_sex_pose_preview_do(_id:String, _args:Dictionary, _context:Dic
 	if(_id == "yes_return_to_reality"):
 		setState("dom_choosing_sex_pose_return_to_reality", "dom")
 	elif(_id == "yes_skip_return_to_reality"):
+		incl_pre_getting_into_pose_do()
 		setState("dom_choosing_sex_pose_done", "dom")
 	elif(_id == "no"):
 		currentSexPoseId = "none"
@@ -363,6 +391,7 @@ func dom_choosing_sex_pose_return_to_reality_text():
 
 func dom_choosing_sex_pose_return_to_reality_do(_id:String, _args:Dictionary, _context:Dictionary):
 	if(_id == "enter_pose"):
+		incl_pre_getting_into_pose_do()
 		setState("dom_choosing_sex_pose_done", "dom")
 
 
@@ -1416,6 +1445,17 @@ func dom_left_sub_alone_do(_id:String, _args:Dictionary, _context:Dictionary):
 		stopMe()
 
 
+func incl_pre_getting_into_pose_do():
+	var currentSexPose = getCurrentSexPose()
+
+	if(currentSexPose == null):
+		return
+
+	if("bottomSlammedIntoWall" in currentSexPose.tags):
+		var bottom = getBottomChar()
+		bottom.addPain( RNG.randi_range(8, 15) )
+
+
 func incl_sex_turn_text():
 	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
 	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
@@ -2014,8 +2054,8 @@ func increaseArousal(_info:Dictionary):
 	var topInterestInAnalSexGiving = topPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
 	var bottomInterestInAnalSexReceiving = bottomPawn.scoreFetishMax({ Fetish.AnalSexReceiving: 1.0 })
 
-	var topArousalIncrease = RNG.randf_range(0.03, 0.07) + 0.08 * max(topInterestInAnalSexGiving, 0)
-	var bottomArousalIncrease = RNG.randf_range(0.01, 0.03) + 0.07 * max(bottomInterestInAnalSexReceiving, 0)
+	var topArousalIncrease = RNG.randf_range(0.05, 0.09) + 0.06 * max(topInterestInAnalSexGiving, 0)
+	var bottomArousalIncrease = RNG.randf_range(0.03, 0.05) + 0.05 * max(bottomInterestInAnalSexReceiving, 0)
 
 	top.addLust( ceil( topArousalIncrease * top.lustThreshold() ) )
 	bottom.addLust( ceil( bottomArousalIncrease * bottom.lustThreshold() ) )
@@ -2104,7 +2144,54 @@ func getSexPoseUnmetRequirements(pose) -> Array:
 		if( !hasWallsNearby() ):
 			unmetRequirements.append("There are no walls nearby.")
 
+	if "strengthStat" in pose.requirements:
+		var dom = getRoleChar("dom")
+
+		var sexPoseStrengthStatRequirement:int = getSexPoseStrengthStatRequirement(pose)
+		var domHasStrengthStatToEnterSexPose:bool = ( dom.getStat(Stat.Strength) >= sexPoseStrengthStatRequirement )
+
+		if(!domHasStrengthStatToEnterSexPose):
+			var sexPoseActionDescPrefix = getSexPoseActionDescPrefix(pose)
+			unmetRequirements.append(sexPoseActionDescPrefix+ pose.requirements.strengthStat.descIfInsufficient +".")
+
 	return unmetRequirements
+
+func getSexPoseStrengthStatRequirement(pose) -> int:
+	var sexPoseStrengthStatRequirement:int = 0
+
+	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
+
+	if( !dom.isPlayer() || !pose.has("requirements") || !pose.requirements.has("strengthStat") ):
+		sexPoseStrengthStatRequirement = 0
+		return sexPoseStrengthStatRequirement
+
+	sexPoseStrengthStatRequirement = int(
+		max(
+			pose.requirements.strengthStat.valueMin,
+			ceil(
+					pose.requirements.strengthStat.valueFromSubLevel
+				* sub.getLevel()
+				* clamp(
+					( sub.getThickness() / 100.0 ),
+					0.2,
+					1.0
+				)
+			)
+		)
+	)
+
+	return sexPoseStrengthStatRequirement
+
+func getSexPoseActionDescPrefix(pose) -> String:
+	var actionDescPrefix:String = ""
+
+	var sexPoseStrengthStatRequirement:int = getSexPoseStrengthStatRequirement(pose)
+
+	if(sexPoseStrengthStatRequirement > 0):
+		actionDescPrefix = "[Strength "+ str(sexPoseStrengthStatRequirement) +"+] "
+
+	return actionDescPrefix
 
 func getPenisNoun():
 	return RNG.pick(["cock", "dick", "member"])
@@ -2190,9 +2277,15 @@ func getPoseDescForCurrentSexPose():
 	if(currentSexPose.id == "raised_leg"):
 		return "with one leg raised"
 	if(currentSexPose.id == "against_a_wall"):
-		return "against a wall"
+		return (
+				"against a wall"
+			if( getRoleChar("sub").hasBoundArms() )
+			else "paws to the wall"
+		)
 	if(currentSexPose.id == "pinned_into_wall"):
 		return "pinned against a wall"
+	if(currentSexPose.id == "stand_and_carry"):
+		return "in a stand and carry position"
 	if(currentSexPose.id == "prone_bone"):
 		return "in a prone bone pose"
 	if(currentSexPose.id == "all_fours"):
@@ -2226,6 +2319,9 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 	var subPersonalitySubbyScore = subPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
 	var subIsSubby = subPersonalitySubbyScore > 0.4
 	var subIsDommy = subPersonalitySubbyScore < -0.4
+	
+	var subInterestInMasochism:float = subPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
+	var subLikesMasochism = subInterestInMasochism >= 0.5
 
 	var top_penis = getTopPenisDesc()
 	var bottom_penis = getBottomPenisDesc()
@@ -2296,12 +2392,25 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "against_a_wall"):
 		return [
-			"{dom.You} "+ dom_gently +" {dom.youVerb('press', 'presses')} {sub.you} against the nearby wall, forcing {sub.youHim} to rely on own arms to keep {sub.yourHis} balance. The tip of {dom.yourHis} "+ top_penis +" brushes over {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", eager to enter."
+			"{dom.You} "+ dom_gently +" {dom.youVerb('press', 'presses')} {sub.you} against the nearby wall, "+ ( "forcing {sub.youHim} to rely on own arms to keep {sub.yourHis} balance" if( !sub.hasBoundArms() ) else "causing {sub.youHim} to struggle maintaining balance, as {sub.yourHis} arms are restrained, and {sub.yourHis} legs are lightly shaking from arousal" ) +". The tip of {dom.yourHis} "+ top_penis +" brushes over {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", eager to enter."
 		]
 
 	if(currentSexPose.id == "pinned_into_wall"):
 		return [
 			"{dom.You} {dom.youVerb('grab')} {sub.your} "+ RNG.pick(["left", "right"]) +" hind paw, "+ dom_gently +" shoving {sub.youHim} into the nearest wall. As {sub.youHe} hastily {sub.youVerb('raise')} {sub.yourHis} arms in hopes to soften the impact, {dom.you} readily {dom.youVerb('pin')} {sub.youHim} against the wall, pressing {dom.yourHis} "+ top_penis +" against {sub.yourHis} vulnerable, "+ bottom_drippy_anus +".",
+		]
+
+	if(currentSexPose.id == "stand_and_carry"):
+		return [
+			"{dom.You} {dom.youVerb('turn')} {sub.you} towards {dom.yourself}"+ ( ", forcing a wet kiss onto {sub.yourHis} lips, and reaching" if( !dom.isOralBlocked() && !sub.isOralBlocked() ) else " and reach" ) +" around to grab {sub.yourHis} rear, swiftly lifting {sub.youHim} up in the air, and [color="+ getSensationColor("pain_severe") +"]impatiently slamming {sub.youHim} into the nearest wall[/color]. As "+ sub_you_reHe_s +" helplessly squished between {dom.you} and the wall in an incredibly hot and vulnerable pose, {dom.youHe} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
+			(
+					"The movements that occurred afterwards have been largely lost to passion. {sub.You} felt [color="+ getSensationColor("pain_severe") +"]sudden but momentary pain in {sub.yourHis} spine[/color] as it was forcibly slammed against a flat, rough surface. "
+				+ (
+						( "{sub.YouHe} thoroughly enjoyed that fleeting feeling, and "+ sub_obediently +" spread {sub.yourHis} legs for {dom.you}." )
+					if(subLikesMasochism)
+					else ( "The brief ache and a lasting agonizing feeling in the bones were well worth what had awaited {sub.youHim}. As {sub.yourHis} eyes rolled back from pleasure"+ (" beneath the blindfold" if( sub.isBlindfolded() ) else "" ) +", {sub.youHe} "+ sub_obediently +" spread {sub.yourHis} legs for {dom.you}." )
+				)
+			)
 		]
 
 	if(currentSexPose.id == "all_fours"):
@@ -2694,6 +2803,8 @@ func getFlavorLinesForCurrentSexPose_bottomGettingClose() -> Array:
 	var flavorLines = [
 		"{bottom.YouHe} {bottom.youAre} approaching a point where it's very difficult to prevent {bottom.yourself} from cumming.",
 		"{bottom.YouHe} {bottom.youVerb('look')} like {bottom.youHe} wouldn't be able to hold off finishing for much longer.",
+		"{bottom.YouHe} {bottom.youAre} moments away from spilling {bottom.yourHis} seed all over.",
+		"{bottom.YouHe} {bottom.youVerb('feel')} that {bottom.youHe} {bottom.youAre} at {bottom.yourHis} very peak.",
 	]
 
 	return flavorLines
