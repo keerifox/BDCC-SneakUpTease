@@ -127,6 +127,15 @@ const ANAL_SEX_RECEIVING_PINNED_POSES = [
 			"bottomUnboundArmsSupportingChest",
 		],
 	},
+	{
+		id = "low_doggy",
+		name = "Low doggy",
+		stageScene = StageScene.SexLowDoggy,
+		oddsScore = 3.0,
+		tags = [
+			"bottomBelowTop", "bottomUnboundArmsSupportingChest",
+		],
+	},
 	ANAL_SEX_RECEIVING_POSE_MATING_PRESS,
 	ANAL_SEX_RECEIVING_POSE_MISSIONARY,
 	ANAL_SEX_RECEIVING_POSE_RAISED_LEG,
@@ -1160,7 +1169,7 @@ func dom_leash_walking_sub_text():
 	var subPersonalityImpatientScore = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
 	var subIsImpatient = subPersonalityImpatientScore > 0.4
 
-	var sub_obediently = RNG.pick(["obediently", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
+	var sub_obediently = RNG.pick(["obediently", "submissively", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
 
 	var domRoomID:String = domPawn.getLocation()
 	# var domRoom = GM.world.getRoomByID(domRoomID)
@@ -2188,6 +2197,8 @@ func getPoseDescForCurrentSexPose():
 		return "in a prone bone pose"
 	if(currentSexPose.id == "all_fours"):
 		return "on all fours"
+	if(currentSexPose.id == "low_doggy"):
+		return "in a low doggy position"
 	if(currentSexPose.id == "cowgirl"):
 		return "in a cowgirl position"
 	if(currentSexPose.id == "cowgirl_alt"):
@@ -2231,7 +2242,7 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 	var dom_you_reHe_s = "you're" if dom.isPlayer() else ( "they're" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
 	var dom_yoursHis = "yours" if dom.isPlayer() else ( "theirs" if ( dom.heShe() == "they" ) else "{dom.his}" )
 
-	var sub_obediently = RNG.pick(["obediently", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
+	var sub_obediently = RNG.pick(["obediently", "submissively", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
 	var sub_willingly = "willingly" if(sub_obediently == "obediently") else sub_obediently
 	var sub_you_reHe_s = "you're" if sub.isPlayer() else ( "they're" if ( sub.heShe() == "they" ) else "{sub.he}'s" )
 	var sub_yoursHis = "yours" if sub.isPlayer() else ( "theirs" if ( sub.heShe() == "they" ) else "{sub.his}" )
@@ -2305,6 +2316,12 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 			])
 
 		return eventLines
+
+	if(currentSexPose.id == "low_doggy"):
+		return [
+			"{dom.You} {dom.youVerb('grab')} one of {sub.your} thighs, pulling it just a little closer to {dom.yourself}. The "+( "sight alone already leaves" if( !dom.isBlindfolded() ) else "curves alone already leave" )+" {dom.youHim} drooling. {dom.YouHe} "+ dom_gently +" {dom.youVerb('pin')} {sub.yourHis} spine to the floor with {dom.yourHis} other paw, and brush the tip of {dom.yourHis} "+ top_penis +" over the sensitive edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", as "+ dom_you_reHe_s +" about to claim what's "+ dom_yoursHis +".",
+			( domCommandingToGetIntoPose + "{sub.You} {sub.youVerb('respond')} with a quiet whine, surrendering {sub.yourHis} body further down into the floor, and "+ sub_obediently +" raising {sub.yourHis} rear for {dom.you} to have {dom.yourHis} way with {sub.youHim}. {dom.YourHis} "+ top_penis +" throbs "+ ( ( "as {dom.yourHis} paws hungrily roam near {sub.yourHis} willingly presented "+ bottom_drippy_anus +"." ) if( dom.isBlindfolded() or RNG.chance(50) ) else ( "from the sight of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +" being willingly presented to {dom.youHim}." ) ) ),
+		]
 
 	if(currentSexPose.id == "cowgirl"):
 		return [
@@ -2661,6 +2678,7 @@ func getFlavorLinesForCurrentSexPose_topGettingClose() -> Array:
 		"{top.YouHe} {top.youVerb('feel')} very close.",
 		"{top.YouHe} {top.youAre} on the very edge.",
 		"{top.YouHe} {top.youAre} nearing {top.yourHis} orgasm.",
+		"{top.YouHe} {top.youVerb('close')} in on {top.yourHis} orgasm.",
 	]
 
 	return flavorLines
@@ -2732,6 +2750,7 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 	var domIsKind = domPersonalityMeanScore < -0.4
 
 	var domPersonalitySubbyScore = domPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
+	var domIsDommy = domPersonalitySubbyScore < -0.4
 	var domIsSubby = domPersonalitySubbyScore > 0.4
 
 	if(currentSexPose.id == "missionary"):
@@ -2754,13 +2773,24 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 			"Be a good "+ RNG.pick(subPetNames) +" and get on all fours.",
 		])
 
-		if(domIsSubby):
+		if(!domIsDommy):
 			dialogueLines.append_array([
 				"Why don't you get on all fours for me~",
 			])
-		else:
+
+		if(!domIsSubby):
 			dialogueLines.append_array([
 				"On all fours, now.",
+			])
+	elif(currentSexPose.id == "low_doggy"):
+		if(!domIsDommy):
+			dialogueLines.append_array([
+				"Raise your ass nicely for me, "+ RNG.pick(subPetNames) +".",
+			])
+
+		if(!domIsSubby):
+			dialogueLines.append_array([
+				"I want to see a pet that understands its place.",
 			])
 	elif( currentSexPose.id in ["cowgirl", "cowgirl_alt", "cowgirl_reverse"] ):
 		dialogueLines.append_array([
@@ -2777,11 +2807,12 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 			"Sit, like a good "+ RNG.pick(subPetNames) +" you are.",
 		])
 
-		if(domIsSubby):
+		if(!domIsDommy):
 			dialogueLines.append_array([
 				"Prepare your lap for me, won't you? Sit.",
 			])
-		else:
+
+		if(!domIsSubby):
 			dialogueLines.append_array([
 				"Sit!",
 			])
