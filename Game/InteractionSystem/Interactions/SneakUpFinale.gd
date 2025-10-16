@@ -28,6 +28,7 @@ var topCameInsideThisTurn:bool = false
 var topCameOutsideThisTurn:bool = false
 var topCameTimes:int = 0
 
+var bottomWasLubedUp:bool = false
 var bottomCameThisTurn:bool = false
 var bottomCameTimes:int = 0
 
@@ -396,13 +397,45 @@ func dom_choosing_sex_pose_return_to_reality_do(_id:String, _args:Dictionary, _c
 
 
 func dom_choosing_sex_pose_done_text():
-	var eventLines = getEventLinesForCurrentSexPose_gettingIntoPose()
+	var dom = getRoleChar("dom")
+	var domPawn = getRolePawn("dom")
+
+	var eventLines:Array = []
+	
+	if(bottomWasLubedUp):
+		eventLines = getEventLinesForCurrentSexPose_applyingLube()
+	else:
+		eventLines = getEventLinesForCurrentSexPose_gettingIntoPose()
 
 	saynn(RNG.pick(eventLines))
 
 	addAction("fuck", "Fuck", "Start the fucking.", "default", 1.0, 60, {})
 
+	var ACTION_NAME_APPLY_LUBE:String = "Lube: Apply"
+	var lubeBottlesCount:int = 1 if( !dom.isPlayer() ) else GM.pc.getInventory().getAmountOf("lube")
+
+	if(bottomWasLubedUp):
+		addDisabledAction(ACTION_NAME_APPLY_LUBE, ( "You're lubed up, it's time for some fun~" if(domIsBottoming) else "You've lubed them up, it's time for some fun~" ))
+	elif(lubeBottlesCount < 1):
+		addDisabledAction(ACTION_NAME_APPLY_LUBE, "You are out of lube.")
+	else:
+		var domApplyLubeProbability:float = 0.0
+		if(domIsBottoming):
+			var domInterestInMasochism:float = domPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
+			domApplyLubeProbability = clamp( (0.5 - 3.0 * domInterestInMasochism), 0.0, 3.5 )
+		else:
+			var domInterestInSadism:float = domPawn.scoreFetishMax({ Fetish.Sadism: 1.0 })
+			var domPersonalityMeanRatio = ( domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 }) + 1.0 ) / 2.0
+			domApplyLubeProbability = clamp( (1.0 - 3.0 * domInterestInSadism - 2.0 * domPersonalityMeanRatio), 0.0, 4.0 )
+
+		var descApplyLube:String = (
+				( "Apply lube onto your tailhole." if(domIsBottoming) else "Apply lube onto their tailhole." )
+			+ "\n[i]You have "+str(lubeBottlesCount)+" lube bottle"+("" if(lubeBottlesCount == 1) else "s")+" left.[/i]"
+		)
+		addAction("apply_lube", ACTION_NAME_APPLY_LUBE, descApplyLube, "default", domApplyLubeProbability, 60, {})
+
 func dom_choosing_sex_pose_done_do(_id:String, _args:Dictionary, _context:Dictionary):
+	var dom = getRoleChar("dom")
 	var top = getTopChar()
 	var bottom = getBottomChar()
 
@@ -414,6 +447,12 @@ func dom_choosing_sex_pose_done_do(_id:String, _args:Dictionary, _context:Dictio
 
 		currentTurnTopOrBottom = nextTurnTopOrBottom
 		setState("sex_"+ nextTurnTopOrBottom +"_turn", "sub")
+	elif(_id == "apply_lube"):
+		if( dom.isPlayer() ):
+			GM.pc.getInventory().removeXOfOrDestroy("lube", 1)
+
+		bottom.addEffect(StatusEffect.LubedUp)
+		bottomWasLubedUp = true
 
 
 func sex_bottom_turn_text():
@@ -1963,6 +2002,7 @@ func saveData():
 	data["topPenisWasOutsidePreviousTurn"] = topPenisWasOutsidePreviousTurn
 	data["topCameTimes"] = topCameTimes
 
+	data["bottomWasLubedUp"] = bottomWasLubedUp
 	data["bottomCameTimes"] = bottomCameTimes
 
 	return data
@@ -2002,6 +2042,7 @@ func loadData(_data):
 	topPenisWasOutsidePreviousTurn = SAVE.loadVar(_data, "topPenisWasOutsidePreviousTurn", true)
 	topCameTimes = SAVE.loadVar(_data, "topCameTimes", 0)
 
+	bottomWasLubedUp = SAVE.loadVar(_data, "bottomWasLubedUp", false)
 	bottomCameThisTurn = SAVE.loadVar(_data, "bottomCameThisTurn", false)
 	bottomCameTimes = SAVE.loadVar(_data, "bottomCameTimes", 0)
 
@@ -2505,6 +2546,29 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	return [
 		"{dom.You} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" intimately close to {sub.your} "+ bottom_drippy_stretched_wide_anus +"."
+	]
+
+func getEventLinesForCurrentSexPose_applyingLube() -> Array:
+	var sub = getRoleChar("sub")
+
+	var bottom_anus = getBottomAnusDesc()
+	var sub_yours = "yours" if sub.isPlayer() else "{sub.nameS}"
+
+	if(domIsBottoming):
+		var eventLines:Array = [
+			"{dom.You} {dom.youVerb('pour')} some water-based lube into {dom.yourHis} paw, thoroughly applying it onto {dom.yourHis} " + bottom_anus + ", while teasingly brushing {dom.yourHis} hips over "+ sub_yours +".",
+		]
+
+		if( !sub.hasBoundArms() && !sub.hasBlockedHands() ):
+			eventLines.append_array([
+				"{dom.You} {dom.youVerb('grab')} hold of {sub.your} wrist, producing a few drops of lube onto {sub.yourHis} open paw, and commanding {sub.youHim} to apply it onto {dom.yourHis} "+ bottom_anus +". {sub.YouHe} {sub.youVerb('find')} it impossible to refuse..",
+			])
+
+		return eventLines
+
+	return [
+		"{dom.You} {dom.youVerb('pour')} some water-based lube into {dom.yourHis} paw, then {dom.youVerb('begin')} working {dom.yourHis} digits through {sub.your} " + bottom_anus + ", curling the paw around.",
+		"{dom.You} {dom.youVerb('squeeze')} a little bit of lube onto the edges of {sub.your} " + bottom_anus + ", letting the lube drip down for a few moments, before playfully running {dom.yourHis} digits to ensure it's applied thoroughly, simultaneously teasing {sub.youHim}.",
 	]
 
 func getPriorityRandomness() -> Dictionary:
