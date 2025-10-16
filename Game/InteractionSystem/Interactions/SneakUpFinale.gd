@@ -2003,6 +2003,7 @@ func saveData():
 	data["topCameTimes"] = topCameTimes
 
 	data["bottomWasLubedUp"] = bottomWasLubedUp
+	data["bottomCameThisTurn"] = bottomCameThisTurn
 	data["bottomCameTimes"] = bottomCameTimes
 
 	return data
@@ -2014,6 +2015,7 @@ func loadData(_data):
 	subConsentedToAnalSexGiving = SAVE.loadVar(_data, "subConsentedToAnalSexGiving", false)
 	subWasPinnedToTheGround = SAVE.loadVar(_data, "subWasPinnedToTheGround", false)
 	subWasUndressed = SAVE.loadVar(_data, "subWasUndressed", false)
+	subWasCuffed = SAVE.loadVar(_data, "subWasCuffed", false)
 	subMightEndSexEarly = SAVE.loadVar(_data, "subMightEndSexEarly", false)
 	subPetNames = SAVE.loadVar(_data, "subPetNames", ["creature"])
 
