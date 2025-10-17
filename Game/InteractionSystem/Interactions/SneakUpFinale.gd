@@ -1525,7 +1525,7 @@ func incl_sex_turn_dialogue_text():
 
 	var topDialogueLines = []
 
-	if( !domIsBottoming && topPenisWasOutsidePreviousTurn && RNG.chance(20) ):
+	if( !domIsBottoming && topPenisWasOutsidePreviousTurn && (topCameTimes == 0) && RNG.chance(20) ):
 		topDialogueLines = getDialogueLines_emphasizeTightness(top)
 
 	if( topDialogueLines.size() > 0 ):
