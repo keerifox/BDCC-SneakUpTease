@@ -3263,6 +3263,11 @@ func getDialogueLines_afterSex(_character:BaseCharacter, _characterRole:String) 
 							"Hope you enjoy being covered in thick ropes, because you don't get to clean for the rest of the day.",
 						])
 			else:
+				if(characterIsTop):
+					dialogueLines.append_array([
+						"Y- You're dripping so much..",
+					])
+
 				dialogueLines.append_array([
 					"Huff.. You're quite charming, always tempting me to keep going..",
 					"Hope I surpassed your expectations, hun~",
