@@ -383,10 +383,24 @@ func dom_choosing_sex_pose_preview_do(_id:String, _args:Dictionary, _context:Dic
 
 
 func dom_choosing_sex_pose_return_to_reality_text():
+	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
+
+	var subPersonalityImpatientScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
+	var subIsImpatient:bool = subPersonalityImpatientScore > 0.4
+
+	var sub_patiently = "patiently" if(!subIsImpatient) else "impatiently"
+
 	saynn( RNG.pick([
 		"{dom.You} reluctantly {dom.youVerb('quit')} imagining {sub.name} in a captivating pose, returning to focus on reality in which {sub.youHe} {sub.youAre} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", eagerly waiting on {dom.youHim} to act.",
-		"{dom.You} hesitantly {dom.youVerb('stop')} picturing {sub.name} in an enticing pose, snapping back to reality in which {sub.youHe} {sub.youAre} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", patiently waiting on {dom.youHim} to begin.",
+		"{dom.You} hesitantly {dom.youVerb('stop')} picturing {sub.name} in an enticing pose, snapping back to reality in which {sub.youHe} {sub.youAre} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", "+ sub_patiently +" waiting on {dom.youHim} to begin.",
 	]) )
+
+	if( RNG.chance(50) ):
+		var dialogueLines:Array = getDialogueLines_waitingToBeForcedIntoPose(sub)
+
+		if( dialogueLines.size() > 0 ):
+			saynn("[say=sub]"+ RNG.pick(dialogueLines) + "[/say]")
 
 	addAction("enter_pose", "Enter pose", "Get both of you into the desired pose.", "default", 1.0, 60, {})
 
@@ -516,6 +530,13 @@ func sex_top_turn_text():
 	saynn(eventLine)
 
 	if(topIsAboutToCum):
+		if( RNG.chance(20) ):
+			var dialogueLines:Array = getDialogueLines_aboutToCum( top, getTopRole() )
+
+			if( dialogueLines.size() > 0 ):
+				var dialogueLine:String = RNG.pick(dialogueLines)
+				saynn("[say="+ getTopRole() +"]"+ dialogueLine +"[/say]")
+
 		var domLustInterests:LustInterests = dom.getLustInterests()
 		var domLustInterestInStuffedAss = domLustInterests.getInterestValue(InterestTopic.StuffedAss)
 		var domLustInterestInCoveredInCum = domLustInterests.getInterestValue(InterestTopic.CoveredInCum)
@@ -1497,8 +1518,8 @@ func incl_pre_getting_into_pose_do():
 
 func incl_sex_turn_text():
 	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
-	var isDomTurn = (currentTurnTopOrBottom == domTopOrBottomString)
-	var topCameThisTurn = topCameInsideThisTurn || topCameOutsideThisTurn
+	var isDomTurn:bool = (currentTurnTopOrBottom == domTopOrBottomString)
+	var topCameThisTurn:bool = topCameInsideThisTurn || topCameOutsideThisTurn
 
 	incl_toggleable_mouth_play_text()
 
@@ -1522,14 +1543,73 @@ func incl_sex_turn_text():
 
 func incl_sex_turn_dialogue_text():
 	var top = getTopChar()
+	var bottom = getBottomChar()
 
-	var topDialogueLines = []
+	var characterIsTop:bool = (currentTurnTopOrBottom == "top")
+	var character = top if(characterIsTop) else bottom
+	var characterRole:String = "dom" if( getRoleChar("dom") == character ) else "sub"
+	#var characterPawn = getRolePawn(characterRole)
+
+	var partnerRole:String = "dom" if(characterRole == "sub") else "sub"
+	var partnerCharacter = bottom if(characterIsTop) else top
+	#var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+
+	var topCameThisTurn:bool = topCameInsideThisTurn || topCameOutsideThisTurn
+
+	var dialogueLines:Array = []
+	var dialogueLinesCharacter = character
+
+	var reactionLines:Array = []
+	var reactionLinesCharacter = partnerCharacter
 
 	if( !domIsBottoming && topPenisWasOutsidePreviousTurn && (topCameTimes == 0) && RNG.chance(20) ):
-		topDialogueLines = getDialogueLines_emphasizeTightness(top)
+		dialogueLines = getDialogueLines_emphasizeTightness(top)
+		dialogueLinesCharacter = top
+	elif(topCameThisTurn):
+		dialogueLines = getDialogueLines_came( top, getTopRole() )
+		dialogueLinesCharacter = top
+	elif(bottomCameThisTurn):
+		dialogueLines = getDialogueLines_came( bottom, getBottomRole() )
+		dialogueLinesCharacter = bottom
+	elif( top.getArousal() >= 0.97 ):
+		if( RNG.chance(25) ):
+			dialogueLines = getDialogueLines_gettingClose( top, getTopRole() )
+			dialogueLinesCharacter = top
+	elif( character.getArousal() >= 0.97 ):
+		if( RNG.chance(25) ):
+			dialogueLines = getDialogueLines_gettingClose(character, characterRole)
+	elif( RNG.chance( 35 if( character.isPlayer() ) else 80 ) ):
+		var shouldUseCommonDialogueLines:bool = RNG.chance(85)
 
-	if( topDialogueLines.size() > 0 ):
-		saynn("[say=dom]"+ RNG.pick(topDialogueLines) +"[/say]")
+		dialogueLines = (
+				getDialogueLines_fuckingOrBeingFucked_common(character, characterRole)
+			if(shouldUseCommonDialogueLines)
+			else getDialogueLines_fuckingOrBeingFucked_rare(character, characterRole)
+		)
+
+		if( !shouldUseCommonDialogueLines && RNG.chance(10) ):
+			reactionLines = getDialogueLines_shushPartner(partnerCharacter, partnerRole)
+
+	var dialogueLinesCharacterRole = "dom" if( getRoleChar("dom") == dialogueLinesCharacter ) else "sub"
+
+	if( dialogueLines.size() > 0 ):
+		var dialogueLine:String = RNG.pick(dialogueLines)
+
+		if(dialogueLinesCharacterRole == "sub"):
+			if( domToggleableMouthPlayState in ["started", "active"] ):
+				dialogueLine = Util.muffledSpeech(dialogueLine, 2)
+
+		if(topCameThisTurn):
+			dialogueLine = applyOrgasmWaveToDialogueLine(dialogueLine)
+
+		saynn("[say="+ dialogueLinesCharacterRole +"]"+ dialogueLine +"[/say]")
+
+	var reactionLinesCharacterRole:String = "dom" if( getRoleChar("dom") == reactionLinesCharacter ) else "sub"
+
+	if( reactionLines.size() > 0 ):
+		var reactionLine:String = RNG.pick(reactionLines)
+
+		saynn("[say="+ reactionLinesCharacterRole +"]"+ reactionLine +"[/say]")
 
 func incl_sex_turn_do_preTick(_id:String):
 	var dom = getRoleChar("dom")
@@ -1875,8 +1955,8 @@ func getAnimData() -> Array:
 		if( getState() in ["sex_bottom_turn", "sex_top_turn", "confirming_whether_to_end_sex"] ):
 			var top = getTopChar()
 
-			var fastAnimationMinArousal = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
-			var animationName = "fast" if( top.getArousal() >= fastAnimationMinArousal ) else "sex"
+			var fastAnimationMinArousal:float = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
+			var animationName:String = "fast" if( top.getArousal() >= fastAnimationMinArousal ) else "sex"
 
 			if(topCameInsideThisTurn):
 				animationName = "inside"
@@ -2086,6 +2166,47 @@ func applyOrgasmSensationToLines(lines:Array) -> Array:
 
 	return lines
 
+func applyOrgasmWaveToDialogueLine(line:String, waveAmpMax:float = 180.0) -> String:
+	var stringLength:int = line.length()
+	var effectStartIdx:int = int( max(stringLength - 12, 0) )
+	var result:String = line.substr(0, effectStartIdx)
+	var rangeSize:float = float(stringLength - effectStartIdx - 1)
+
+	for n in range(effectStartIdx, stringLength):
+		var rangeRatio:float = (n - effectStartIdx) / rangeSize
+		var waveAmpEven:float = waveAmpMax * pow(rangeRatio, 2.0)
+		var waveAmpOdd:float = -0.5 * waveAmpEven
+		var waveAmp:float = ( waveAmpOdd if( bool(n % 2) ) else waveAmpEven )
+
+		if( line[n] == " " ):
+			result += " "
+		else:
+			result += (
+					"[wave amp="+("%0.2f" % waveAmp)+" freq=0.25]"
+				+ line[n]
+				+ (
+						"~ "
+					if( n == (stringLength - 1) )
+					else ""
+				)
+				+ "[/wave]"
+			)
+
+	return result
+
+func generateRandomString(_info:Dictionary):
+	var result:String = ""
+	var length:int = RNG.randi_range( _info.range[0], _info.range[1] )
+	var dictPool:Array = []
+
+	for n in length:
+		if( dictPool.size() < 1 ):
+			dictPool = _info.dict.duplicate()
+
+		result += RNG.grab(dictPool)
+
+	return result
+
 func increaseArousal(_info:Dictionary):
 	var nextTurnTopOrBottom = _info.nextTurnTopOrBottom
 
@@ -2236,18 +2357,38 @@ func getSexPoseActionDescPrefix(pose) -> String:
 
 	return actionDescPrefix
 
-func getPenisNoun():
+# For some creatures this will be incorrect, sorry..
+func getBoyBoun(characterRole:String) -> String:
+	var character = getRoleChar(characterRole)
+	
+	var boyNoun = (
+			RNG.pick(["thing", "critter"])
+		if( character.getGender() == Gender.Other )
+		else (
+				RNG.pick(["boy", "girl"])
+			if ( character.heShe() == "they" )
+			else (
+					"girl"
+				if ( character.heShe() == "she" )
+				else "boy"
+			)
+		)
+	)
+	
+	return boyNoun
+
+func getPenisNoun() -> String:
 	return RNG.pick(["cock", "dick", "member"])
-func getPenisNounPlural():
+func getPenisNounPlural() -> String:
 	return getPenisNoun() + "s"
 
-func getPenisDesc(_role:String):
+func getPenisDesc(_role:String) -> String:
 	return "{"+ _role +".penisDesc} "+ getPenisNoun()
-func getTopPenisDesc():
+func getTopPenisDesc() -> String:
 	return getPenisDesc( getTopRole() )
-func getBottomPenisDesc():
+func getBottomPenisDesc() -> String:
 	return getPenisDesc( getBottomRole() )
-func getBothPenisesDesc():
+func getBothPenisesDesc() -> String:
 	var sharedPenisDesc = ""
 
 	var dom = getRoleChar("dom")
@@ -2286,24 +2427,24 @@ func getBothPenisesDesc():
 
 	return ( RNG.pick(sharedPenisDescriptions) + " " + getPenisNounPlural() )
 
-func getAnusAdjective():
+func getAnusAdjective() -> String:
 	return RNG.pick(["needy", "awaiting", "drippy", "inviting", "wet", "slick", "aroused"])
 
-func getAnusDesc(_role:String):
+func getAnusDesc(_role:String) -> String:
 	return RNG.pick(["anus", "tailhole", "backdoor", "star", "anal ring"])
-func getTopAnusDesc():
+func getTopAnusDesc() -> String:
 	return getAnusDesc( getTopRole() )
-func getBottomAnusDesc():
+func getBottomAnusDesc() -> String:
 	return getAnusDesc( getBottomRole() )
 
-func getAnusDescWithStretch(_role:String):
+func getAnusDescWithStretch(_role:String) -> String:
 	return "{"+ _role +".anusStretch} "+ getBottomAnusDesc()
-func getTopAnusDescWithStretch():
+func getTopAnusDescWithStretch() -> String:
 	return getAnusDescWithStretch( getTopRole() )
-func getBottomAnusDescWithStretch():
+func getBottomAnusDescWithStretch() -> String:
 	return getAnusDescWithStretch( getBottomRole() )
 
-func getPoseDescForCurrentSexPose():
+func getPoseDescForCurrentSexPose() -> String:
 	var currentSexPose = getCurrentSexPose()
 
 	if(currentSexPose == null):
@@ -2913,6 +3054,45 @@ func getFlavorLinesForCurrentSexPose_bottomCame() -> Array:
 
 	return flavorLines
 
+func getDialogueLines_waitingToBeForcedIntoPose(_sub:BaseCharacter) -> Array:
+	var subPawn = getRolePawn("sub")
+
+	var dialogueLines:Array = []
+
+	var subPersonalityMeanScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean:bool = subPersonalityMeanScore > 0.4
+
+	var subPersonalityImpatientScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
+	var subIsImpatient:bool = subPersonalityImpatientScore > 0.4
+
+	if(subIsImpatient):
+		if(subIsMean):
+			dialogueLines.append_array([
+				"What the hell are you waiting for?",
+				"Enough teasing already.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Don't keep me waiting..",
+			])
+
+	if(subIsMean):
+		dialogueLines.append_array([
+			"Consider your next move very carefully..",
+		])
+	else:
+		dialogueLines.append_array([
+			"Go easy..",
+			"All yours.",
+		])
+
+	dialogueLines.append_array([
+		"Don't be shy..",
+		"Go on..",
+	])
+
+	return dialogueLines
+
 func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 	var dialogueLines = []
 
@@ -3031,6 +3211,546 @@ func getDialogueLines_emphasizeTightness(_character:BaseCharacter) -> Array:
 		dialogueLines.append_array([
 			"Didn't expect you to be so tight~"
 		])
+
+	return dialogueLines
+
+func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _characterRole:String) -> Array:
+	var top = getTopChar()
+
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	var characterPersonalityMeanScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean:bool = characterPersonalityMeanScore > 0.4
+
+	var characterInterestInBeingBitten:float = characterPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
+	var characterLikesBeingBitten:bool = characterInterestInBeingBitten >= 0.5
+
+	var characterSpecies = _character.getSpecies()
+
+	var partnerRole:String = "dom" if(_characterRole == "sub") else "sub"
+	var partnerCharacter = getBottomChar() if(characterIsTop) else getTopChar()
+	var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+	var partnerName:String = partnerCharacter.getName()
+	var partnerArousal:float = partnerCharacter.getArousal()
+
+	var affectionValue:float = characterPawn.getAffection(partnerPawn)
+
+	var partner_boy:String = getBoyBoun(partnerRole)
+	var partner_boy_or_puppy:String = (
+			partner_boy
+		if( RNG.chance(65) || (partnerRole != "sub") )
+		else RNG.pick(subPetNames)
+	)
+
+	# Used by both doms and subs
+
+	var dialogueLines:Array = []
+
+	var currentSexPose = getCurrentSexPose()
+
+	if(currentSexPose == null):
+		return dialogueLines
+
+	var fastAnimationMinArousal:float = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
+	var isAnimationFast:bool = ( top.getArousal() >= fastAnimationMinArousal )
+
+	if(_characterRole == "dom"):
+		if(affectionValue >= 0.4):
+			if( RNG.chance(50) ):
+				dialogueLines.append_array([
+					partnerName + "..",
+				])
+
+		if(characterIsTop):
+			dialogueLines.append_array([
+				"Take it..",
+			])
+
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				"Good "+ partner_boy_or_puppy + RNG.pick([".", "~"]),
+			])
+
+		dialogueLines.append_array([
+			"Hufff..",
+			"Huffh..",
+			"Huff"+ RNG.pick(["..", "~"]),
+			"Ahh..",
+			"Yeah"+ RNG.pick(["..", "~"]),
+		])
+	else:
+		var dialoguePartsUnused:Array = []
+
+		var variants_verbMe:Array = []
+
+		if( RNG.chance(15) ):
+			variants_verbMe.append_array([
+				"Grope me..",
+			])
+
+			if(characterLikesBeingBitten):
+				variants_verbMe.append_array([
+					"Sink your teeth into me..",
+				])
+
+			if(!characterIsTop):
+				variants_verbMe.append_array([
+					"Pin me tighter..",
+				])
+
+			if(!characterIsMean):
+				variants_verbMe.append_array([
+					"Spank me..",
+					"Put your lips against mine..",
+				])
+
+				if( _character.hasNonFlatBreasts() ):
+					variants_verbMe.append_array([
+						"Fondle my tits..",
+						"Squeeze my breasts..",
+					])
+
+				if(characterLikesBeingBitten):
+					variants_verbMe.append_array([
+						"Bite into my neck..",
+					])
+
+		if(affectionValue >= 0.4):
+			if( RNG.chance(50) ):
+				dialoguePartsUnused.append_array([
+					RNG.pick([
+						partnerName + "..",
+						partnerName[0] + "- " + partnerName + "..",
+					])
+				])
+		elif( _character.isStaff() && partnerCharacter.isInmate() && RNG.chance(10) ):
+			dialoguePartsUnused.append_array([
+				"Inmate..",
+			])
+
+			if( partnerCharacter.isPlayer() ):
+				dialoguePartsUnused.append_array([
+					GM.pc.getFullInmateNumber().substr( GM.pc.getFullInmateNumber().length() - 2 ) + "..",
+				])
+
+		if( characterSpecies.has(Species.Canine) ):
+			dialoguePartsUnused.append_array([
+				"Wruff..",
+			])
+
+		if( characterSpecies.has(Species.Feline) ):
+			dialoguePartsUnused.append_array([
+				"Meow..",
+			])
+
+		if(!characterIsTop):
+			variants_verbMe.append_array([
+				"Breed me..",
+			])
+
+			if(partnerArousal >= 0.7):
+				variants_verbMe.append_array([
+					"Fill me..",
+					"Just a few more..",
+				])
+
+			if( partnerCharacter.bodypartHasTrait(BodypartSlot.Penis, PartTrait.PenisKnot) ):
+				variants_verbMe.append_array([
+					"Knot me..",
+				])
+
+		if(isAnimationFast):
+			dialoguePartsUnused.append_array([
+				RNG.pick(["Haah..", "Guh.."]),
+			])
+		else:
+			if(topCameTimes < 6):
+				dialoguePartsUnused.append_array([
+					RNG.pick(["Keep going..", "K- Keep going..", "Don't stop..", "D- Don't stop..", "Just like that.."]),
+				])
+
+		if(characterIsMean):
+			dialoguePartsUnused.append_array([
+				RNG.pick(["Hhmpfhh..", "Hmfhh..", "Hmphh.."]),
+			])
+
+			if( RNG.chance(10) ):
+				dialoguePartsUnused.append_array([
+					RNG.pick(["You asshole..", "You bastard..", "You freak..", "Fucker.."]),
+				])
+		else:
+			variants_verbMe.append_array([
+				"Use me..",
+			])
+
+			dialoguePartsUnused.append_array([
+				RNG.pick(["Mmhh~", "Mmhff~", "Mmfhh~"]),
+				"Please..",
+			])
+
+		dialoguePartsUnused.append_array([
+			RNG.pick(["Fuck..", "F- Fuck.."]),
+			RNG.pick(["Yes..", "Yesss.."]),
+			"Ahh..",
+			"Huff.."
+		])
+
+		if( variants_verbMe.size() > 0 ):
+			dialoguePartsUnused.append( RNG.pick(variants_verbMe) )
+
+		if( dialoguePartsUnused.size() < 1 ):
+			return dialogueLines
+
+		var dialogueLine:String = ""
+		var usedDialoguePart:String = ""
+
+		var partsNeeded:int = 1 + int( RNG.chance(70) )
+		if(partsNeeded == 2):
+			partsNeeded += int( RNG.chance(30) )
+
+		for n in partsNeeded:
+			usedDialoguePart = RNG.grab(dialoguePartsUnused)
+
+			if(dialogueLine == ""):
+				dialogueLine = usedDialoguePart
+			else:
+				if( (n == 1) && (".." in dialogueLine) && (".." in usedDialoguePart) ):
+					if( RNG.chance(50) ):
+						# One.... Two..
+						dialogueLine += ( ".." if( RNG.chance(50) ) else "." )
+					else:
+						# One.. Two....
+						usedDialoguePart += ( ".." if( RNG.chance(50) ) else "." )
+
+				dialogueLine = dialogueLine + " " + usedDialoguePart
+
+		dialogueLines.append(dialogueLine)
+
+	return dialogueLines
+
+func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _characterRole:String) -> Array:
+	var top = getTopChar()
+
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	var characterPersonalityMeanScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean:bool = characterPersonalityMeanScore > 0.4
+
+	var characterPersonalitySubbyScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
+	var characterIsDommy:bool = characterPersonalitySubbyScore < -0.4
+
+	var characterPersonalityCowardScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Coward: 1.0 })
+	var characterIsCowardly:bool = characterPersonalityCowardScore > 0.4
+	var characterIsCourageous:bool = characterPersonalityCowardScore < -0.4
+
+	var partnerRole:String = "dom" if(_characterRole == "sub") else "sub"
+	var partnerCharacter = getBottomChar() if(characterIsTop) else getTopChar()
+	#var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+	var partnerArousal:float = partnerCharacter.getArousal()
+
+	var partner_boy:String = getBoyBoun(partnerRole)
+	var partner_boy_or_puppy:String = (
+			partner_boy
+		if( RNG.chance(65) || (partnerRole != "sub") )
+		else RNG.pick(subPetNames)
+	)
+
+	var dialogueLines:Array = []
+
+	var currentSexPose = getCurrentSexPose()
+
+	if(currentSexPose == null):
+		return dialogueLines
+
+	var fastAnimationMinArousal:float = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
+	var isAnimationFast:bool = ( top.getArousal() >= fastAnimationMinArousal )
+	var isAnimationAboutToBeFast:bool = !isAnimationFast && ( top.getArousal() >= (fastAnimationMinArousal - 0.05) )
+
+	# Used by both doms and subs
+
+	if(_characterRole == "dom"):
+		if(characterIsTop):
+			dialogueLines.append_array([
+				"I'll make sure you remember me.",
+			])
+
+			if(partnerArousal >= 0.8):
+				dialogueLines.append_array([
+					"Cum for me.",
+				])
+			elif(partnerArousal >= 0.4):
+				if(characterIsMean):
+					dialogueLines.append_array([
+						"Are you close? Nevermind, I don't really care.",
+					])
+
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"Such a great fleshlight.",
+					"You're nothing but a fucktoy.",
+				])
+			else:
+				dialogueLines.append_array([
+					"I need to breed you so bad..",
+				])
+
+		if( ( domToggleableMouthPlayState in ["started", "active"] ) == false ):
+			dialogueLines.append_array([
+				"You'll be licking those paws soon.",
+			])
+
+		if( !_character.isBlindfolded() && !partnerCharacter.isBlindfolded() ):
+			dialogueLines.append_array([
+				"Keep your eyes on me.",
+			])
+
+		if(characterIsDommy):
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"Know your place, "+ RNG.pick(["brat", "slut"]) +".",
+				])
+			else:
+				dialogueLines.append_array([
+					"Know your place.",
+				])
+
+		if(characterIsMean):
+			dialogueLines.append_array([
+				"You're so weak.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Such a "+ RNG.pick(["good", "needy"]) +" "+ partner_boy_or_puppy +".",
+				"That's it, good "+ partner_boy_or_puppy +".",
+				"I'll take good care of you..",
+				"You're doing great~",
+				"So needy..",
+				"I know you're loving this.",
+				"Huff.. You're mine.",
+				"You're so fucking comfy..",
+				"Gosh..",
+				"You make the most adorable noises.",
+			])
+
+		dialogueLines.append_array([
+			"I'll make you squirm.",
+		])
+	else:
+		if(!characterIsTop):
+			if(partnerArousal >= 0.9):
+				if(!characterIsMean):
+					dialogueLines.append_array([
+						"P- Please cum in me..",
+						"Fill me up.. Please..",
+						"Cover me in your seed.. Please..",
+					])
+			elif(partnerArousal >= 0.8):
+				dialogueLines.append_array([
+					"You're leaking so much..",
+				])
+			elif(partnerArousal >= 0.4):
+				if(!characterIsMean):
+					dialogueLines.append_array([
+						"How close are you..?",
+					])
+
+			if(!bottomWasLubedUp && isAnimationFast):
+				if(characterIsMean):
+					dialogueLines.append_array([
+						"Slow down, bitch!",
+					])
+				else:
+					dialogueLines.append_array([
+						"Aaahhh.. My tailhole..",
+						"D- Don't be so rough..",
+					])
+
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"*groan* Watch it!",
+					"How long until you're begging to be in my place?",
+				])
+
+				if( RNG.chance(10) ):
+					dialogueLines.append_array([
+						"Fuck me good, or the stocks will be your new home.",
+					])
+			else:
+				dialogueLines.append_array([
+					"So eager..",
+					"Make me yours~",
+					"I'm taking so much of you..",
+					"Squish into my thighs..",
+					"My body is so hot..",
+				])
+
+		if(isAnimationAboutToBeFast):
+			if(characterIsMean):
+				dialogueLines.append_array([
+					"Why are you still so slow..",
+					"Can you hurry up and-",
+					"Don't go easy on me now..",
+				])
+
+		if(characterIsCowardly):
+			dialogueLines.append_array([
+				"You're drawing too much attention..",
+			])
+
+			if(!characterIsMean):
+				dialogueLines.append_array([
+					"Everyone is staring..",
+				])
+
+				if( _character.isStaff() ):
+					dialogueLines.append_array([
+						"Someone's going to catch us..",
+						"I can't be seen like this..",
+						"You're going to get me in trouble..",
+					])
+		elif(characterIsCourageous):
+			dialogueLines.append_array([
+				"Let them stare..",
+			])
+
+		if(characterIsMean):
+			dialogueLines.append_array([
+				"Is that all you've-.. F- Fuck..",
+				"You really think you're in control?",
+				"Surrender your body to me, bitch.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Use me like a toy..",
+			])
+
+	if(characterIsTop):
+		if(!characterIsMean):
+			dialogueLines.append_array([
+				"You feel so good..",
+			])
+
+	return dialogueLines
+
+func getDialogueLines_shushPartner(_character:BaseCharacter, _characterRole:String) -> Array:
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	var characterPersonalityMeanScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsMean:bool = characterPersonalityMeanScore > 0.4
+
+	# Used by both doms and subs
+
+	var dialogueLines:Array = []
+	
+	if(characterIsMean):
+		if(characterIsTop):
+			dialogueLines.append_array([
+				"Shut up, and let me fuck you good~",
+			])
+
+		if(_characterRole == "dom"):
+			dialogueLines.append_array([
+				"Learn your place, brat.",
+			])
+		else:
+			dialogueLines.append_array([
+				"Sh- Shut up.. Just keep going..",
+			])
+
+		dialogueLines.append_array([
+			"Shut up..",
+			"Shush.",
+		])
+	else:
+		dialogueLines = []
+
+	return dialogueLines
+
+func getDialogueLines_gettingClose(_character:BaseCharacter, _characterRole:String) -> Array:
+	#var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	# Used by both doms and subs
+
+	var dialogueLines:Array = []
+
+	if(characterIsTop):
+		dialogueLines.append_array([
+			"Hmffh~ I can't hold it for much longer..",
+			"Guhh.. I'm on my very edge..",
+			"Huff.. I'm getting close..",
+			"I'm "+ RNG.pick(["pretty ", "so ", ""]) +"close..",
+		])
+	else:
+		dialogueLines = []
+
+	return dialogueLines
+
+func getDialogueLines_aboutToCum(_character:BaseCharacter, _characterRole:String) -> Array:
+	#var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	# Used by both doms and subs
+
+	var dialogueLines:Array = []
+
+	if(characterIsTop):
+		dialogueLines.append_array([
+			"Huff!.. Huff.. I- I think I'm about to-",
+			"F- Fuck, I'm about to-",
+		])
+	else:
+		dialogueLines = []
+
+	return dialogueLines
+
+func getDialogueLines_came(_character:BaseCharacter, _characterRole:String) -> Array:
+	var characterPawn = getRolePawn(_characterRole)
+	var characterIsTop:bool = ( _character == getTopChar() )
+
+	var partnerCharacter = getBottomChar() if(characterIsTop) else getTopChar()
+	var partnerPawn = getBottomPawn() if(characterIsTop) else getTopPawn()
+	var partnerName:String = partnerCharacter.getName()
+
+	var affectionValue:float = characterPawn.getAffection(partnerPawn)
+
+	# Used by both doms and subs
+
+	var dialogueLines:Array = []
+
+	if(characterIsTop):
+		if(affectionValue >= 0.4):
+			dialogueLines.append_array([
+				"Ahhh- " + partnerName + ".. H"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				"Huffh.. " + partnerName[0] + "- " + partnerName + ".. H"+ generateRandomString({ dict = ["h", "f"], range = [5, 9] }),
+			])
+
+		if( RNG.chance(10) ):
+			dialogueLines.append_array([
+				"Oh f-fuck.. Guhh"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				"Oh f-fuck"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				"Fuuu"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				"Haaaahh"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				"G"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+			])
+
+			if(topCameInsideThisTurn):
+				dialogueLines.append_array([
+					"Hhff- Yess.. Take it all- H"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+				])
+
+		dialogueLines.append_array([
+			"Ahhh.. Guhh"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+			"Huffff"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+			"Guhh"+ generateRandomString({ dict = ["g", "h", "f"], range = [5, 9] }),
+			"H"+ generateRandomString({ dict = ["g", "h", "n"], range = [5, 9] }),
+			"N"+ generateRandomString({ dict = ["g", "h", "n"], range = [5, 9] }),
+		])
+	else:
+		dialogueLines = []
 
 	return dialogueLines
 
