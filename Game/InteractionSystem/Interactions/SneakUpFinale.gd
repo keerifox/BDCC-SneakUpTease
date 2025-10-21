@@ -1386,7 +1386,14 @@ func dom_leash_walking_sub_text():
 				addAction("walk", "Keep walking", "Keep pulling them around.", "default", 1.0, 60, {})
 
 			for n in ( 2 if(domLeashedWalkReachedTargetLoc) else 1 ):
-				addAction("stay", "Stay a while", "Stand here for a little bit.", "default", ( 1.0 if(n == 2) else -0.01 ), 60, {})
+				var isThisTheFirstStayAction:bool = (n == 0)
+
+				var mayPawnStay:bool = (
+						isThisTheFirstStayAction
+					&& (domLeashedWalkReachedTargetLoc || domLeashedWalkStoodStill)
+				)
+
+				addAction("stay", "Stay a while", "Stand here for a little bit.", "default", ( 1.5 if(mayPawnStay) else -0.01 ), 60, {})
 
 		if(domLeashedWalkTraversedCellsCount > 10):
 			var domProbabilityToStop = ( 0.02 * (domLeashedWalkTraversedCellsCount - 30) ) if(domLeashedWalkTargetLoc == "") else -0.01
