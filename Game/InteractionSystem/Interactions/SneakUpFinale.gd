@@ -2630,7 +2630,7 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 			(
 					( "{sub.You} {sub.youVerb('lay')} on {sub.yourHis} spine, expecting {dom.you}. Without hesitation, {dom.youHe} {dom.youVerb('pounce')} at {sub.youHim}, "+ dom_gently +" stradling, " )
 				+ (
-						( "and playfully frotting "+ both_yourTheir +" "+ ( both_penises if(both_penises != "") else getPenisNounPlural() ) +" together until "+ dom_you_reHe_s +" ready to ride {sub.yourHis}." )
+						( "and playfully frotting "+ both_yourTheir +" "+ ( both_penises if(both_penises != "") else getPenisNounPlural() ) +" together until "+ dom_you_reHe_s +" ready to ride "+ sub_yoursHis +"." )
 					if( dom.hasBodypart(BodypartSlot.Penis) && RNG.chance(50) )
 					else ( "and rubbing {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" against {sub.yourHis} "+ top_penis +"." )
 				)
