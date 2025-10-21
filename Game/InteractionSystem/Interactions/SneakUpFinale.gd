@@ -3082,6 +3082,7 @@ func getDialogueLines_waitingToBeForcedIntoPose(_sub:BaseCharacter) -> Array:
 		])
 	else:
 		dialogueLines.append_array([
+			"Hope you have enough lube for us both~",
 			"Go easy..",
 			"All yours.",
 		])
@@ -3485,6 +3486,11 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 					dialogueLines.append_array([
 						"Are you close? Nevermind, I don't really care.",
 					])
+
+			if( partnerCharacter.isLilac() ):
+				dialogueLines.append_array([
+					"You're such a slut~",
+				])
 
 			if(characterIsMean):
 				dialogueLines.append_array([
