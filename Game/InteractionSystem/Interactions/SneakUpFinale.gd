@@ -826,8 +826,10 @@ func dom_after_sex_text():
 				dialogueLines = getDialogueLines_afterSexSubSeekingAffirmationReaction(dom)
 				saynn("[say=dom]"+ RNG.pick(dialogueLines) +"[/say]")
 			else:
+				var sub_hair_or_head:String = "hair" if( sub.hasHair() ) else "head"
+
 				saynn( RNG.pick([
-					"{dom.You} {dom.youVerb('reach', 'reaches')} towards {sub.your} hair, petting it softly, without a word leaving {dom.yourHis} mouth.",
+					"{dom.You} {dom.youVerb('reach', 'reaches')} towards {sub.your} "+ sub_hair_or_head +", petting it softly, without a word leaving {dom.yourHis} mouth.",
 				]) )
 		else:
 			dialogueLines = getDialogueLines_afterSex(sub, "sub")
