@@ -2708,7 +2708,7 @@ func getEventLinesForCurrentSexPose_applyingLube() -> Array:
 
 	if(domIsBottoming):
 		var eventLines:Array = [
-			"{dom.You} {dom.youVerb('pour')} some water-based lube into {dom.yourHis} paw, thoroughly applying it onto {dom.yourHis} " + bottom_anus + ", while teasingly brushing {dom.yourHis} hips over "+ sub_yours +".",
+			"{dom.You} {dom.youVerb('pour')} some water-based lube onto {dom.yourHis} open paw, thoroughly applying it onto {dom.yourHis} " + bottom_anus + ", while teasingly brushing {dom.yourHis} hips over "+ sub_yours +".",
 		]
 
 		if( !sub.hasBoundArms() && !sub.hasBlockedHands() ):
@@ -2719,7 +2719,7 @@ func getEventLinesForCurrentSexPose_applyingLube() -> Array:
 		return eventLines
 
 	return [
-		"{dom.You} {dom.youVerb('pour')} some water-based lube into {dom.yourHis} paw, then {dom.youVerb('begin')} working {dom.yourHis} digits through {sub.your} " + bottom_anus + ", curling the paw around.",
+		"{dom.You} {dom.youVerb('pour')} some water-based lube onto {dom.yourHis} open paw, then {dom.youVerb('begin')} working {dom.yourHis} digits through {sub.your} " + bottom_anus + ", curling the paw around.",
 		"{dom.You} {dom.youVerb('squeeze')} a little bit of lube onto the edges of {sub.your} " + bottom_anus + ", letting the lube drip down for a few moments, before playfully running {dom.yourHis} digits to ensure it's applied thoroughly, simultaneously teasing {sub.youHim}.",
 	]
 
