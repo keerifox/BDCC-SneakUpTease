@@ -1587,17 +1587,24 @@ func incl_sex_turn_dialogue_text():
 	elif( character.getArousal() >= 0.97 ):
 		if( RNG.chance(25) ):
 			dialogueLines = getDialogueLines_gettingClose(character, characterRole)
-	elif( RNG.chance( 35 if( character.isPlayer() ) else 80 ) ):
-		var shouldUseCommonDialogueLines:bool = RNG.chance(85)
+	else:
+		var speechChance:float = 35.0 if( character.isPlayer() ) else 80.0
 
-		dialogueLines = (
-				getDialogueLines_fuckingOrBeingFucked_common(character, characterRole)
-			if(shouldUseCommonDialogueLines)
-			else getDialogueLines_fuckingOrBeingFucked_rare(character, characterRole)
-		)
+		if(characterRole == "sub"):
+			if( domToggleableMouthPlayState in ["started", "active"] ):
+				speechChance *= 0.4
 
-		if( !shouldUseCommonDialogueLines && RNG.chance(10) ):
-			reactionLines = getDialogueLines_shushPartner(partnerCharacter, partnerRole)
+		if( RNG.chance(speechChance) ):
+			var shouldUseCommonDialogueLines:bool = RNG.chance(85)
+
+			dialogueLines = (
+					getDialogueLines_fuckingOrBeingFucked_common(character, characterRole)
+				if(shouldUseCommonDialogueLines)
+				else getDialogueLines_fuckingOrBeingFucked_rare(character, characterRole)
+			)
+
+			if( !shouldUseCommonDialogueLines && RNG.chance(10) ):
+				reactionLines = getDialogueLines_shushPartner(partnerCharacter, partnerRole)
 
 	var dialogueLinesCharacterRole = "dom" if( getRoleChar("dom") == dialogueLinesCharacter ) else "sub"
 
@@ -1605,8 +1612,13 @@ func incl_sex_turn_dialogue_text():
 		var dialogueLine:String = RNG.pick(dialogueLines)
 
 		if(dialogueLinesCharacterRole == "sub"):
-			if( domToggleableMouthPlayState in ["started", "active"] ):
-				dialogueLine = Util.muffledSpeech(dialogueLine, 2)
+			if( ( domToggleableMouthPlayState in ["started", "active"] ) && !dialogueLinesCharacter.isGagged() ):
+				var dialogueLineBeforeMuffled:String = dialogueLine
+				var muffleStrength:int = 1 + int( RNG.chance(25) )
+				dialogueLine = Util.muffledSpeech(dialogueLine, muffleStrength)
+
+				if( GM.pc.hasPerk(Perk.BDSMGagTalk) && (dialogueLine != dialogueLineBeforeMuffled) ):
+					dialogueLine += "\" ("+ dialogueLineBeforeMuffled +")"
 
 		if(topCameThisTurn):
 			dialogueLine = applyOrgasmWaveToDialogueLine(dialogueLine)
