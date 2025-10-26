@@ -3243,6 +3243,7 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 	var characterIsTop:bool = ( _character == getTopChar() )
 
 	var characterPersonalityMeanScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var characterIsKind:bool = characterPersonalityMeanScore < -0.4
 	var characterIsMean:bool = characterPersonalityMeanScore > 0.4
 
 	var characterInterestInBeingBitten:float = characterPawn.scoreFetishMax({ Fetish.Masochism: 1.0 })
@@ -3306,7 +3307,7 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 
 		var variants_verbMe:Array = []
 
-		if( RNG.chance(15) ):
+		if( RNG.chance(30) ):
 			variants_verbMe.append_array([
 				"Grope me..",
 			])
@@ -3347,14 +3348,23 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 					])
 				])
 		elif( _character.isStaff() && partnerCharacter.isInmate() && RNG.chance(10) ):
-			dialoguePartsUnused.append_array([
+			var variants_inmate:Array = [
 				"Inmate..",
-			])
+			]
 
 			if( partnerCharacter.isPlayer() ):
-				dialoguePartsUnused.append_array([
-					GM.pc.getFullInmateNumber().substr( GM.pc.getFullInmateNumber().length() - 2 ) + "..",
+				variants_inmate.append_array([
+					( GM.pc.getFullInmateNumber().substr( GM.pc.getFullInmateNumber().length() - 2 ) + ".." ),
 				])
+
+			if( partnerCharacter.isLilac() ):
+				variants_inmate.append_array([
+					"Lilac..",
+				])
+
+			dialoguePartsUnused.append_array([
+				RNG.pick(variants_inmate)
+			])
 
 		if( characterSpecies.has(Species.Canine) ):
 			dialoguePartsUnused.append_array([
@@ -3377,17 +3387,17 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 					"Just a few more..",
 				])
 
-			if( partnerCharacter.bodypartHasTrait(BodypartSlot.Penis, PartTrait.PenisKnot) ):
-				variants_verbMe.append_array([
-					"Knot me..",
-				])
+				if( partnerCharacter.bodypartHasTrait(BodypartSlot.Penis, PartTrait.PenisKnot) ):
+					variants_verbMe.append_array([
+						"Knot me..",
+					])
 
 		if(isAnimationFast):
 			dialoguePartsUnused.append_array([
-				RNG.pick(["Haah..", "Guh.."]),
+				RNG.pick(["Haah..", "Guh..", "Nngh..", "Nnhh.."]),
 			])
 		else:
-			if(topCameTimes < 6):
+			if( (topCameTimes < 6) && RNG.chance(50) ):
 				dialoguePartsUnused.append_array([
 					RNG.pick(["Keep going..", "K- Keep going..", "Don't stop..", "D- Don't stop..", "Just like that.."]),
 				])
@@ -3399,7 +3409,7 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 
 			if( RNG.chance(10) ):
 				dialoguePartsUnused.append_array([
-					RNG.pick(["You asshole..", "You bastard..", "You freak..", "Fucker.."]),
+					RNG.pick(["You asshole..", "You bastard..", "You freak..", "Fucker..", "Damn you.."]),
 				])
 		else:
 			variants_verbMe.append_array([
@@ -3407,18 +3417,26 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 			])
 
 			dialoguePartsUnused.append_array([
-				RNG.pick(["Mmhh~", "Mmhff~", "Mmfhh~"]),
+				RNG.pick(["Mmhh~..", "Mmhff~..", "Mmfhh~..", "Mmm.."]),
 				"Please..",
 			])
 
+		if(characterIsKind):
+			dialoguePartsUnused.append_array([
+				RNG.pick(["Gosh..", "Goshh.."]),
+			])
+		else:
+			dialoguePartsUnused.append_array([
+				RNG.pick(["Fuck..", "F- Fuck.."]),
+			])
+
 		dialoguePartsUnused.append_array([
-			RNG.pick(["Fuck..", "F- Fuck.."]),
 			RNG.pick(["Yes..", "Yesss.."]),
 			"Ahh..",
 			"Huff.."
 		])
 
-		if( variants_verbMe.size() > 0 ):
+		if( ( variants_verbMe.size() > 0 ) && RNG.chance(50) ):
 			dialoguePartsUnused.append( RNG.pick(variants_verbMe) )
 
 		if( dialoguePartsUnused.size() < 1 ):
@@ -3462,6 +3480,7 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 
 	var characterPersonalitySubbyScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
 	var characterIsDommy:bool = characterPersonalitySubbyScore < -0.4
+	var characterIsSubby:bool = characterPersonalitySubbyScore > 0.4
 
 	var characterPersonalityCowardScore:float = characterPawn.scorePersonalityMax({ PersonalityStat.Coward: 1.0 })
 	var characterIsCowardly:bool = characterPersonalityCowardScore > 0.4
@@ -3557,7 +3576,6 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 				"I know you're loving this.",
 				"Huff.. You're mine.",
 				"You're so fucking comfy..",
-				"Gosh..",
 				"You make the most adorable noises.",
 			])
 
@@ -3613,12 +3631,23 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 					"My body is so hot..",
 				])
 
+				if(characterIsSubby):
+					dialogueLines.append_array([
+						"N- Not fair..",
+					])
+
 		if(isAnimationAboutToBeFast):
 			if(characterIsMean):
 				dialogueLines.append_array([
 					"Why are you still so slow..",
 					"Can you hurry up and-",
 					"Don't go easy on me now..",
+				])
+
+		if(!isAnimationFast):
+			if(!characterIsMean):
+				dialogueLines.append_array([
+					"So nice..",
 				])
 
 		if(characterIsCowardly):
