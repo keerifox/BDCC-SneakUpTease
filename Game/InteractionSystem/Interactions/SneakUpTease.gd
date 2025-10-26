@@ -358,7 +358,7 @@ func after_sub_resisted_text():
 	if(isFirstNonSkippableResist):
 		possible.append_array([
 			"{sub.You} {sub.youVerb('try', 'tries')} to struggle out of {dom.your} grip, but it's no use. {dom.You} {dom.youVerb('hold')} {sub.youHim} tight, like an animal that has just caught its prey.",
-			"{sub.You} {sub.youVerb('attempt')} to wiggle {sub.yourHis} way out, but {sub.youVerb('end')} up rubbing {sub.yourHis} soft butt rub all over {dom.your} crotch, which makes {dom.youHim} grip {sub.youHim} even tighter.",
+			"{sub.You} {sub.youVerb('attempt')} to wiggle {sub.yourHis} way out, but {sub.youVerb('end')} up rubbing {sub.yourHis} soft butt all over {dom.your} crotch, which makes {dom.youHim} grip {sub.youHim} even tighter.",
 		])
 	elif(!subWasPinnedToTheGround):
 		# Standing
