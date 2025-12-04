@@ -3547,7 +3547,7 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 				"You'll be licking those paws soon.",
 			])
 
-		if( !_character.isBlindfolded() && !partnerCharacter.isBlindfolded() ):
+		if( ("bottomFacingTop" in currentSexPose.tags) && !_character.isBlindfolded() && !partnerCharacter.isBlindfolded() ):
 			dialogueLines.append_array([
 				"Keep your eyes on me.",
 			])
