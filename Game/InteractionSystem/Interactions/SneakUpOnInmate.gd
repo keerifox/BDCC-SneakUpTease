@@ -173,7 +173,11 @@ func getPreviewLineForRole(_role:String) -> String:
 		return "{sub.name} {sub.has} been caught off guard by {dom.name}."
 
 	return .getPreviewLineForRole(_role)
-	
+
+func shouldHideRelativeActionChances() -> bool:
+	return true
+
+
 func getIncompleteSpeciesFullName(species: Array):
 	if( species.size() == 0 ):
 		return "Wild"

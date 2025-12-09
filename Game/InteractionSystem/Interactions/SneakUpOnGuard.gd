@@ -317,6 +317,9 @@ func getPreviewLineForRole(_role:String) -> String:
 
 	return .getPreviewLineForRole(_role)
 
+func shouldHideRelativeActionChances() -> bool:
+	return true
+
 
 func isInmateWearingStaffUniform():
 	var inmateInventory = getRoleChar("inmate").getInventory()

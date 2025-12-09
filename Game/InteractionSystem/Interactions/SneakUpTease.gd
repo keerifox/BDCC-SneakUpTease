@@ -2569,6 +2569,9 @@ func stopMe():
 
 	return .stopMe()
 
+func shouldHideRelativeActionChances() -> bool:
+	return true
+
 func saveData():
 	var data = .saveData()
 

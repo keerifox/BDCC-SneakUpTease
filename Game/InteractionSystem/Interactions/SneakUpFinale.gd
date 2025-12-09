@@ -2067,6 +2067,9 @@ func isRoleOnALeash(_role:String) -> bool:
 func isRoleLeashing(_role:String) -> bool:
 	return ( (_role == "dom") && getState() in ["dom_leash_walking_sub"] )
 
+func shouldHideRelativeActionChances() -> bool:
+	return true
+
 func saveData():
 	var data = .saveData()
 
