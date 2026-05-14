@@ -2014,38 +2014,38 @@ func getPreviewLineForRole(_role:String) -> String:
 
 	if( isAssumingSexImminent || ( getState() in ["dom_choosing_sex_pose_done", "dom_choosing_sex_pose_preview", "dom_after_sex"] ) ):
 		if(_role == "dom"):
-			return "{dom.name} {dom.is} about to fuck {sub.name}."
+			return "{dom.name} is about to fuck {sub.name}."
 		elif(_role == "sub"):
-			return "{sub.name} {sub.is} is about to be fucked by {dom.name}."
+			return "{sub.name} is about to be fucked by {dom.name}."
 
 	if( getState() in ["sex_bottom_turn", "sex_top_turn", "confirming_whether_to_end_sex"] ):
 		if(_role == "dom"):
-			return "{dom.name} {dom.is} fucking {sub.name}."
+			return "{dom.name} is fucking {sub.name}."
 		elif(_role == "sub"):
-			return "{sub.name} {sub.is} being fucked by {dom.name}."
+			return "{sub.name} is being fucked by {dom.name}."
 
 	if( getState() == "dom_cuddling_sub" ):
 		if(_role == "dom"):
-			return "{dom.name} {dom.is} cuddling with {sub.name}."
+			return "{dom.name} is cuddling with {sub.name}."
 		elif(_role == "sub"):
-			return "{sub.name} {sub.is} being cuddled by {dom.name}."
+			return "{sub.name} is being cuddled by {dom.name}."
 
 	if( getState() == "dom_messy_kissing_sub" ):
 		if(_role == "dom"):
-			return "{dom.name} {dom.is} messily kissing {sub.name}."
+			return "{dom.name} is messily kissing {sub.name}."
 		elif(_role == "sub"):
-			return "{sub.name} {sub.is} being messily kissed by {dom.name}."
+			return "{sub.name} is being messily kissed by {dom.name}."
 
 	if( getState() == "dom_leash_walking_sub" ):
 		if(_role == "dom"):
-			return "{dom.name} {dom.is} walking {sub.name} on a leash."
+			return "{dom.name} is walking {sub.name} on a leash."
 		elif(_role == "sub"):
-			return "{sub.name} {sub.is} held on a leash by {dom.name}."
+			return "{sub.name} is held on a leash by {dom.name}."
 
 	if(_role == "dom"):
-		return "{dom.name} {dom.is} having some fun with {sub.name}."
+		return "{dom.name} is having some fun with {sub.name}."
 	elif(_role == "sub"):
-		return "{sub.name} {sub.is} at the whim of {dom.name}."
+		return "{sub.name} is at the whim of {dom.name}."
 
 	return .getPreviewLineForRole(_role)
 

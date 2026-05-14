@@ -2545,9 +2545,9 @@ func getActivityIconForRole(_role:String):
 	
 func getPreviewLineForRole(_role:String) -> String:
 	if(_role == "dom"):
-		return "{dom.name} {dom.is} teasing {sub.name}."
+		return "{dom.name} is teasing {sub.name}."
 	if(_role == "sub"):
-		return "{sub.name} {sub.is} being teased by {dom.name}."
+		return "{sub.name} is being teased by {dom.name}."
 
 	return .getPreviewLineForRole(_role)
 

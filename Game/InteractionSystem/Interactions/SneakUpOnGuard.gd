@@ -311,7 +311,7 @@ func getPreviewLineForRole(_role:String) -> String:
 			return "{inmate.name} decided to draw {guard.nameS} attention."
 
 	if(_role == "guard"):
-		return "{guard.name} {guard.is} patroling the off-limits area, but does not spot {inmate.name}."
+		return "{guard.name} is patroling the off-limits area, but does not spot {inmate.name}."
 	elif(_role == "inmate"):
 		return "{inmate.name} avoided being seen by {guard.name}."
 

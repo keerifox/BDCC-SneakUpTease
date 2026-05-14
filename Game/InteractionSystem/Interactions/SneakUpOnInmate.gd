@@ -168,9 +168,9 @@ func getActivityIconForRole(_role:String):
 	
 func getPreviewLineForRole(_role:String) -> String:
 	if(_role == "dom"):
-		return "{dom.name} {dom.has} caught {sub.name} off guard."
+		return "{dom.name} has caught {sub.name} off guard."
 	if(_role == "sub"):
-		return "{sub.name} {sub.has} been caught off guard by {dom.name}."
+		return "{sub.name} has been caught off guard by {dom.name}."
 
 	return .getPreviewLineForRole(_role)
 
