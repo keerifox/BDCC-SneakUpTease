@@ -2692,24 +2692,32 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 		]
 
 	if(currentSexPose.id == "lotus"):
-		return [
-			(
-					( "{sub.You} {sub.youVerb('rest')} {sub.yourHis} butt on the ground, and {dom.you} promptly {dom.youVerb('sink')} into {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.yourHis} waist, and resting {dom.yourHis} paws on {sub.yourHis} shoulders, as both of "+ both_youThem +" are pressed together in an intimate embrace. " )
-				+ (
-						( both_YourTheir +" "+ both_penises +" "+ RNG.pick(["touch", "throb"]) + " together." )
-					if( both_penises != "" )
-					else ( "{dom.Your} "+ bottom_penis +" lightly "+ RNG.pick(["brushes", "nudges"]) +" against {sub.yourHis} "+ top_penis +"." )
-				)
-			),
-			(
-					( domCommandingToGetIntoPose + "{sub.You} instinctively {sub.youVerb('obey')}, perhaps trained for this. {dom.You} {dom.youVerb('position')} {dom.yourself} in {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.youHim}, and pressing close in an intimate embrace. " )
-				+ (
-						( both_YourTheir +" "+ both_penises +" are eagerly "+ RNG.pick(["touching", "throbbing"]) + " together." )
-					if( both_penises != "" )
-					else ( "{dom.Your} "+ bottom_penis +" eagerly "+ RNG.pick(["brushes", "nudges"]) +" against {sub.yourHis} "+ top_penis +"." )
-				)
-			),
-		]
+		if( dom.hasBodypart(BodypartSlot.Penis) ):
+			eventLines.append_array([
+				(
+						( "{sub.You} {sub.youVerb('rest')} {sub.yourHis} butt on the ground, and {dom.you} promptly {dom.youVerb('sink')} into {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.yourHis} waist, and resting {dom.yourHis} paws on {sub.yourHis} shoulders, as both of "+ both_youThem +" are pressed together in an intimate embrace. " )
+					+ (
+							( both_YourTheir +" "+ both_penises +" "+ RNG.pick(["touch", "throb"]) + " together." )
+						if( both_penises != "" )
+						else ( "{dom.Your} "+ bottom_penis +" lightly "+ RNG.pick(["brushes", "nudges"]) +" against {sub.yourHis} "+ top_penis +"." )
+					)
+				),
+				(
+						( domCommandingToGetIntoPose + "{sub.You} instinctively {sub.youVerb('obey')}, perhaps trained for this. {dom.You} {dom.youVerb('position')} {dom.yourself} in {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.youHim}, and pressing close in an intimate embrace. " )
+					+ (
+							( both_YourTheir +" "+ both_penises +" are eagerly "+ RNG.pick(["touching", "throbbing"]) + " together." )
+						if( both_penises != "" )
+						else ( "{dom.Your} "+ bottom_penis +" eagerly "+ RNG.pick(["brushes", "nudges"]) +" against {sub.yourHis} "+ top_penis +"." )
+					)
+				),
+			])
+		else:
+			eventLines.append_array([
+				( "{dom.You} teasingly "+ RNG.pick(["{dom.youVerb('brush')}", "{dom.youVerb('rub')}"]) +" {dom.yourHis} "+ RNG.pick(["thighs", "body"]) + " against {sub.yourHis} "+ top_penis +"." ),
+				( "{dom.You} eagerly "+ RNG.pick(["{dom.youVerb('brush')}", "{dom.youVerb('rub')}"]) +" {dom.yourHis} "+ bottom_drippy_anus +" against {sub.yourHis} "+ top_penis +"." ),
+			])
+
+		return eventLines
 
 	return [
 		"{dom.You} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" intimately close to {sub.your} "+ bottom_drippy_stretched_wide_anus +"."
