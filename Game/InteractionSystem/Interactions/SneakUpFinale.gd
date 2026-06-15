@@ -1587,6 +1587,9 @@ func incl_sex_turn_dialogue_text():
 	elif( character.getArousal() >= 0.97 ):
 		if( RNG.chance(25) ):
 			dialogueLines = getDialogueLines_gettingClose(character, characterRole)
+	elif( topCameInsidePreviousTurn && (topCameTimes >= 6) && (topCameTimes <= 8) && RNG.chance(20) ):
+		dialogueLines = getDialogueLines_strugglingToEndure()
+		dialogueLinesCharacter = getRoleChar("sub")
 	else:
 		var speechChance:float = 35.0 if( character.isPlayer() ) else 80.0
 
@@ -3087,6 +3090,8 @@ func getFlavorLinesForCurrentSexPose_bottomCame() -> Array:
 	return flavorLines
 
 func getDialogueLines_waitingToBeForcedIntoPose(_sub:BaseCharacter) -> Array:
+	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
 	var subPawn = getRolePawn("sub")
 
 	var dialogueLines:Array = []
@@ -3096,6 +3101,11 @@ func getDialogueLines_waitingToBeForcedIntoPose(_sub:BaseCharacter) -> Array:
 
 	var subPersonalityImpatientScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
 	var subIsImpatient:bool = subPersonalityImpatientScore > 0.4
+
+	if( !dom.isBlindfolded() && !sub.isBlindfolded() ):
+		dialogueLines.append_array([
+			"W- Why are you looking at me like that..",
+		])
 
 	if(subIsImpatient):
 		if(subIsMean):
@@ -3345,6 +3355,11 @@ func getDialogueLines_fuckingOrBeingFucked_common(_character:BaseCharacter, _cha
 						"Squeeze my breasts..",
 					])
 
+					if( !characterIsTop && ("bottomFacingTop" in currentSexPose.tags) ):
+						variants_verbMe.append_array([
+							"Bury your face between my milkers..",
+						])
+
 				if(characterLikesBeingBitten):
 					variants_verbMe.append_array([
 						"Bite into my neck..",
@@ -3588,6 +3603,7 @@ func getDialogueLines_fuckingOrBeingFucked_rare(_character:BaseCharacter, _chara
 				"Huff.. You're mine.",
 				"You're so fucking comfy..",
 				"You make the most adorable noises.",
+				"I want to hear you whimper~",
 			])
 
 		dialogueLines.append_array([
@@ -3818,6 +3834,20 @@ func getDialogueLines_came(_character:BaseCharacter, _characterRole:String) -> A
 		])
 	else:
 		dialogueLines = []
+
+	return dialogueLines
+
+func getDialogueLines_strugglingToEndure():
+	var dialogueLines:Array = [
+		"A- Again??!",
+		"You are.. *huff*.. so obsessed over me.. *huff*..",
+		"H- How are you still-.. Fuckhhf..",
+	]
+
+	if(!domIsBottoming):
+		dialogueLines.append_array([
+			"Don't stop.. *huff*.. breeding me..",
+		])
 
 	return dialogueLines
 
