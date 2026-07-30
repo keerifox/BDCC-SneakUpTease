@@ -8,6 +8,7 @@ var subWasCuffed:bool = false
 var subMightEndSexEarly:bool = false
 var subPetNames:Array = ["creature"]
 
+var domWasUninterestedInSexEngineAction:bool = false
 var domIsBottoming:bool = false
 var domHasImmediatelyLeftConsentingSub:bool = false
 var domToggleableMouthPlayMightPerform:bool = false
@@ -224,6 +225,8 @@ func start(_pawns:Dictionary, _args:Dictionary):
 		subWasUndressed = true
 	if( _args.has("subPetNames") ):
 		subPetNames = _args["subPetNames"]
+	if( _args.has("domWasUninterestedInSexEngineAction") && _args["domWasUninterestedInSexEngineAction"] ):
+		domWasUninterestedInSexEngineAction = true
 
 	if(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving):
 		getRoleChar("dom").lustStateFullyUndress()
@@ -238,36 +241,42 @@ func start(_pawns:Dictionary, _args:Dictionary):
 	setState("", "dom")
 
 func init_text():
-	var dom = getRoleChar("dom")
-	var sub = getRoleChar("sub")
-
 	var both_youThem = "you" if( isPlayerInvolved() ) else "them"
-	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-	var sub_youDon_t = "don't" if ( sub.isPlayer() || ( sub.hasHave() == "have" ) ) else "doesn't"
 
 	var possible = []
 
-	if(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving):
+	if(domWasUninterestedInSexEngineAction):
+		possible.append_array([
+			(
+					"{dom.You} {dom.youArent} currently interested in doing sexual things to {sub.you}, but {dom.youreTheyre} "
+				+ RNG.pick([
+					"not willing to let {sub.youHim} go just yet",
+					( "still holding onto {sub.youHim}, "+ RNG.pick(["reluctant", "unwilling"]) +" to let go" ),
+				])
+				+ "."
+			),
+		])
+	elif(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving):
 		possible.append_array([
 			"{sub.You} {sub.youAre} fully lost in the thought, eagerly awaiting for {dom.you} to have {dom.yourHis} way with {sub.youHim}.",
 		])
 	else:
 		possible.append_array([
-			"{sub.You} "+ sub_youDon_t +" seem interested in a sexual intercourse with {dom.you}. If there's anything else that {dom.youHe} {dom.youVerb('have', 'has')} on offer, there's a good chance {sub.youHe} might indulge.",
-			"{sub.You} {sub.youAre}n't exactly warm to the idea of {dom.you} fucking {sub.youHim}, so that's off the table. {dom.YouHe} can still mess with {sub.youHim} a little, before {dom.youHe} {dom.youVerb('leave')}.",
-			"{sub.You} may not want {dom.you} fucking {sub.youHim}, but "+ dom_you_veHe_s + " showered {sub.youHim} with enough attention, for {sub.youHim} to be open to a brief play session before "+ both_youThem +" part ways.",
-			"Seems {dom.you} {dom.youVerb('were', 'was')} rather off the mark on what {sub.you} would be interested in doing with {dom.youHim}. However, {sub.youHe} did find {dom.yourHis} determination rather impressive, and likely wouldn't oppose a small parting gift of sorts.",
+			"{sub.You} {sub.youDont} seem interested in a sexual intercourse with {dom.you}. If there's anything else that {dom.youHe} {dom.youHaveHeHas} on offer, there's a good chance {sub.youHe} might indulge.",
+			"{sub.You} {sub.youArent} exactly warm to the idea of {dom.you} fucking {sub.youHim}, so that's off the table. {dom.YouHe} can still mess with {sub.youHim} a little, before {dom.youHe} {dom.youHeVerb('leave')}.",
+			"{sub.You} may not want {dom.you} fucking {sub.youHim}, but {dom.youveTheyve} showered {sub.youHim} with enough attention, for {sub.youHim} to be open to a brief play session before "+ both_youThem +" part ways.",
+			"Seems {dom.you} {dom.youWere} rather off the mark on what {sub.you} would be interested in doing with {dom.youHim}. However, {sub.youHe} did find {dom.yourHis} determination rather impressive, and likely wouldn't oppose a small parting gift of sorts.",
 		])
 
 	saynn(RNG.pick(possible))
 
 	if(subConsentedToAnalSexReceiving):
-		addAction("dom_anal_sex_giving_pose_select", "Fuck: Anal", "Proceed to pose selection for a sexual act in which you are fucking their butt~", "default", 1.0, 60, {})
+		addAction("dom_anal_sex_giving_pose_select", "Fuck: Anal", "Proceed to pose selection for a sexual act in which you are fucking their butt~", "default", -0.01 if(domWasUninterestedInSexEngineAction) else 1.0, 60, {})
 
 	if(subConsentedToAnalSexGiving):
-		addAction("dom_anal_sex_receiving_pose_select", "Ride: Anal", "Proceed to pose selection for a sexual act in which you are riding their cock~", "default", 1.0, 60, {})
+		addAction("dom_anal_sex_receiving_pose_select", "Ride: Anal", "Proceed to pose selection for a sexual act in which you are riding their cock~", "default", -0.01 if(domWasUninterestedInSexEngineAction) else 1.0, 60, {})
 
-	var domProbabilityToStartPlaySession = -0.01 if(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving) else 1.0
+	var domProbabilityToStartPlaySession = -0.01 if( !domWasUninterestedInSexEngineAction && (subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving) ) else 1.0
 	addAction("dom_parting_action_select", "Play session", "Proceed to parting action selection.", "default", domProbabilityToStartPlaySession, 60, {})
 
 	addAction("leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
@@ -298,7 +307,7 @@ func dom_choosing_sex_pose_text():
 		])
 	else:
 		possible.append_array([
-			"{dom.You} playfully {dom.youVerb('run')} a digit between {sub.your} buttcheeks, thinking about which pose {dom.youHe} {dom.youVerb('want')} {sub.youHim} the most in.",
+			"{dom.You} playfully {dom.youVerb('run')} a digit between {sub.your} buttcheeks, thinking about which pose {dom.youHe} {dom.youHeVerb('want')} {sub.youHim} the most in.",
 		])
 
 	saynn(RNG.pick(possible))
@@ -359,7 +368,7 @@ func dom_choosing_sex_pose_preview_text():
 		])
 	else:
 		possible.append_array([
-			"{dom.You} {dom.youVerb('imagine')} {dom.yourself} about to "+ ( "ride" if(domIsBottoming) else "fuck" ) +" {sub.you} " + getPoseDescForCurrentSexPose() + ".",
+			"{dom.You} {dom.youVerb('imagine')} {dom.yourselfThemself} about to "+ ( "ride" if(domIsBottoming) else "fuck" ) +" {sub.you} " + getPoseDescForCurrentSexPose() + ".",
 		])
 
 	saynn(RNG.pick(possible))
@@ -392,15 +401,15 @@ func dom_choosing_sex_pose_return_to_reality_text():
 	var sub_patiently = "patiently" if(!subIsImpatient) else "impatiently"
 
 	saynn( RNG.pick([
-		"{dom.You} reluctantly {dom.youVerb('quit')} imagining {sub.name} in a captivating pose, returning to focus on reality in which {sub.youHe} {sub.youAre} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", eagerly waiting on {dom.youHim} to act.",
-		"{dom.You} hesitantly {dom.youVerb('stop')} picturing {sub.name} in an enticing pose, snapping back to reality in which {sub.youHe} {sub.youAre} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", "+ sub_patiently +" waiting on {dom.youHim} to begin.",
+		"{dom.You} reluctantly {dom.youVerb('quit')} imagining {sub.name} in a captivating pose, returning to focus on reality in which {sub.youHe} {sub.youAreHeIs} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", eagerly waiting on {dom.youHim} to act.",
+		"{dom.You} hesitantly {dom.youVerb('stop')} picturing {sub.name} in an enticing pose, snapping back to reality in which {sub.youHe} {sub.youAreHeIs} still "+ ( "standing in front of {dom.youHim}" if(!subWasPinnedToTheGround) else "pinned underneath {dom.youHim}" ) + ", "+ sub_patiently +" waiting on {dom.youHim} to begin.",
 	]) )
 
 	if( RNG.chance(50) ):
 		var dialogueLines:Array = getDialogueLines_waitingToBeForcedIntoPose(sub)
 
 		if( dialogueLines.size() > 0 ):
-			saynn("[say=sub]"+ RNG.pick(dialogueLines) + "[/say]")
+			saynn( "[say=sub]"+ RNG.pick(dialogueLines) + "[/say]" )
 
 	addAction("enter_pose", "Enter pose", "Get both of you into the desired pose.", "default", 1.0, 60, {})
 
@@ -535,7 +544,7 @@ func sex_top_turn_text():
 
 			if( dialogueLines.size() > 0 ):
 				var dialogueLine:String = RNG.pick(dialogueLines)
-				saynn("[say="+ getTopRole() +"]"+ dialogueLine +"[/say]")
+				saynn( "[say="+ getTopRole() +"]"+ dialogueLine +"[/say]" )
 
 		var domLustInterests:LustInterests = dom.getLustInterests()
 		var domLustInterestInStuffedAss = domLustInterests.getInterestValue(InterestTopic.StuffedAss)
@@ -606,12 +615,10 @@ func confirming_whether_to_end_sex_text():
 	var character = getCurrentPawn().getCharacter()
 	var characterRole = "dom" if( getRoleChar("dom") == character ) else "sub"
 
-	var character_you_veHe_s = "you've" if character.isPlayer() else ( "they've" if ( character.heShe() == "they" ) else ("{"+ characterRole + ".he}'s") )
-
 	if(hasSexEndedEarly):
-		saynn("{"+ characterRole + ".YouAre} {"+ characterRole + ".you} sure {"+ characterRole + ".youHe} {"+ characterRole + ".youVerb('want')} to stop here?")
+		saynn("{"+ characterRole + ".YouAre} {"+ characterRole + ".you} sure {"+ characterRole + ".youHe} {"+ characterRole + ".youHeVerb('want')} to stop here?")
 	else:
-		saynn("{"+ characterRole + ".YouAre} {"+ characterRole + ".you} sure "+ character_you_veHe_s +" had enough?")
+		saynn("{"+ characterRole + ".YouAre} {"+ characterRole + ".you} sure {"+ characterRole + ".youveTheyve} had enough?")
 
 	addAction("confirm_end_sex", "End sex", ( "You want it to stop." if(hasSexEndedEarly) else "You've really had enough." ), "default", 1.0, 60, {})
 	addAction("cancel", "Cancel", "You did not really mean to press that..", "default", 0.1, 0, {})
@@ -653,11 +660,11 @@ func ended_sex_early_text():
 
 		possible = getDialogueLines_endedSexEarlyDueToTransformation(character, characterRole)
 		if( possible.size() > 0 ):
-			saynn("[say="+characterRole+"]"+ RNG.pick(possible) +"[/say]")
+			saynn( "[say="+characterRole+"]"+ RNG.pick(possible) +"[/say]" )
 
 		possible = getDialogueLines_endedSexEarlyDueToTransformationReaction(partner, partnerRole)
 		if( possible.size() > 0 ):
-			saynn("[say="+partnerRole+"]"+ RNG.pick(possible) +"[/say]")
+			saynn( "[say="+partnerRole+"]"+ RNG.pick(possible) +"[/say]" )
 	elif(characterRole == "dom"):
 		var dom = character
 		var sub = partner
@@ -674,21 +681,21 @@ func ended_sex_early_text():
 		saynn(RNG.pick(possible))
 
 		possible = getDialogueLines_endedSexEarly(dom, "dom")
-		saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+		saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 
 		possible = getDialogueLines_endedSexEarlyReaction(sub, "sub")
-		saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
+		saynn( "[say=sub]"+ RNG.pick(possible) +"[/say]" )
 	else:
 		var sub = character
 		var dom = partner
 
 		if( sub.hasBoundArms() || sub.hasBlockedHands() ):
 			possible.append_array([
-				"{sub.You} {sub.youVerb('call')} out to {dom.you}, simultaneously using the movement of {sub.yourHis} body to [color="+ getSensationColor("attention") +"]indicate that {sub.youHe} {sub.youVerb('need')} {dom.youHim} to stop[/color].",
+				"{sub.You} {sub.youVerb('call')} out to {dom.you}, simultaneously using the movement of {sub.yourHis} body to [color="+ getSensationColor("attention") +"]indicate that {sub.youHe} {sub.youHeVerb('need')} {dom.youHim} to stop[/color].",
 			])
 		else:
 			possible.append_array([
-				"{sub.You} {sub.youVerb('raise')} {sub.yourHis} paw, digits spread out, waving it to {dom.you}, [color="+ getSensationColor("attention") +"]signaling that {sub.youHe} {sub.youVerb('need')} {dom.youHim} to stop[/color].",
+				"{sub.You} {sub.youVerb('raise')} {sub.yourHis} paw, digits spread out, waving it to {dom.you}, [color="+ getSensationColor("attention") +"]signaling that {sub.youHe} {sub.youHeVerb('need')} {dom.youHim} to stop[/color].",
 			])
 
 		saynn(RNG.pick(possible))
@@ -707,10 +714,10 @@ func ended_sex_early_text():
 		saynn(RNG.pick(possible))
 
 		possible = getDialogueLines_endedSexEarly(sub, "sub")
-		saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
+		saynn( "[say=sub]"+ RNG.pick(possible) +"[/say]" )
 
 		possible = getDialogueLines_endedSexEarlyReaction(dom, "dom")
-		saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+		saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 
 	var partnerOfferCuddlesProbability = 1.0 - 1.4 * partnerPersonalityMeanRatio
 	var partnerLetThemLeaveProbability = 1.0 - max(partnerOfferCuddlesProbability, 0.0)
@@ -736,7 +743,7 @@ func offered_cuddles_text():
 	var partner = getRoleChar(partnerRole)
 
 	var dialogueLines = getDialogueLines_offerCuddles(partner, partnerRole)
-	saynn("[say="+ partnerRole +"]"+ RNG.pick(dialogueLines) +"[/say]")
+	saynn( "[say="+ partnerRole +"]"+ RNG.pick(dialogueLines) +"[/say]" )
 
 	addAction("yes", "Yes", "Agree to cuddle.", "default", 1.0, 60, {})
 	addAction("no", "No", "You don't want to cuddle.", "default", 0.2, 60, {})
@@ -814,17 +821,17 @@ func dom_after_sex_text():
 
 	if( RNG.chance(domDialogueChance) ):
 		dialogueLines = getDialogueLines_afterSex(dom, "dom")
-		saynn("[say=dom]"+ RNG.pick(dialogueLines) +"[/say]")
+		saynn( "[say=dom]"+ RNG.pick(dialogueLines) +"[/say]" )
 	else:
 		var subSeekingAffirmationChance = 0 if(subIsMean) else 20
 
 		if( RNG.chance(subSeekingAffirmationChance) ):
 			dialogueLines = getDialogueLines_afterSexSubSeekingAffirmation(sub)
-			saynn("[say=sub]"+ RNG.pick(dialogueLines) +"[/say]")
+			saynn( "[say=sub]"+ RNG.pick(dialogueLines) +"[/say]" )
 
 			if( RNG.chance(60) ):
 				dialogueLines = getDialogueLines_afterSexSubSeekingAffirmationReaction(dom)
-				saynn("[say=dom]"+ RNG.pick(dialogueLines) +"[/say]")
+				saynn( "[say=dom]"+ RNG.pick(dialogueLines) +"[/say]" )
 			else:
 				var sub_hair_or_head:String = "hair" if( sub.hasHair() ) else "head"
 
@@ -833,7 +840,7 @@ func dom_after_sex_text():
 				]) )
 		else:
 			dialogueLines = getDialogueLines_afterSex(sub, "sub")
-			saynn("[say=sub]"+ RNG.pick(dialogueLines) +"[/say]")
+			saynn( "[say=sub]"+ RNG.pick(dialogueLines) +"[/say]" )
 
 	addAction("leave", "Leave", "Leave them here.", "default", 1.0, 60, {})
 
@@ -947,14 +954,11 @@ func dom_cuddling_sub_text():
 
 	var affectionValue:float = domPawn.getAffection(subPawn)
 
-	var dom_you_reHe_s = "you're" if dom.isPlayer() else ( "they're" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-
 	var possible = []
 
 	if( hasSexEndedEarly && (domCuddlesLastedTurns == 0) ):
 		possible.append_array([
-			"{dom.You} {dom.youVerb('sit')} on {dom.yourHis} butt, opening {dom.yourHis} arms wide for {sub.you}. {sub.YouHe} {sub.youVerb('rest')} nearby, letting {dom.youHim} envelop {sub.youHim} in a hug.",
+			"{dom.You} {dom.youVerb('sit')} on {dom.yourHis} butt, opening {dom.yourHis} arms wide for {sub.you}. {sub.YouHe} {sub.youHeVerb('rest')} nearby, letting {dom.youHim} envelop {sub.youHim} in a hug.",
 		])
 
 		saynn( RNG.pick(possible) )
@@ -974,7 +978,7 @@ func dom_cuddling_sub_text():
 
 		if(subIsMean):
 			possible.append_array([
-				"{sub.You} {sub.youVerb('were', 'was')} about to pull away while throwing some mean words at {dom.you}, but {sub.youHe} didn't. {sub.YouHe} sat still, not putting up a rude expression, not fighting {dom.your} embrace, and not calling {dom.youHim} a slut"+ ( (" ("+ dom_you_reHe_s +" still one, however)") if( dom.isPlayer() && hasRepLevelPC("dom", RepStat.Whore, 2) ) else "" ) +". One would say it was rather out of character, "+ ( ("but "+ dom_you_veHe_s +" known {sub.youHim} enough to know there's more to {sub.yourHis} personality than the thorns on display.") if(affectionValue > 0.8) else ("but "+ dom_you_veHe_s +" never really figured out which side would be {sub.yourHis} genuine self. Perhaps, it's not as naive as that, and it's both beings that comprise {sub.youHim} for who {sub.youHe} {sub.youAre}. Perhaps, it goes beyond two.") ),
+				"{sub.You} {sub.youWere} about to pull away while throwing some mean words at {dom.you}, but {sub.youHe} didn't. {sub.YouHe} sat still, not putting up a rude expression, not fighting {dom.your} embrace, and not calling {dom.youHim} a slut"+ ( (" ({dom.youreTheyre} still one, however)") if( dom.isPlayer() && hasRepLevelPC("dom", RepStat.Whore, 2) ) else "" ) +". One would say it was rather out of character, "+ ( ("but {dom.youveTheyve} known {sub.youHim} enough to know there's more to {sub.yourHis} personality than the thorns on display.") if(affectionValue > 0.8) else ("but {dom.youveTheyve} never really figured out which side would be {sub.yourHis} genuine self. Perhaps, it's not as naive as that, and it's both beings that comprise {sub.youHim} for who {sub.youHe} {sub.youAreHeIs}. Perhaps, it goes beyond two.") ),
 			])
 		else:
 			possible.append_array([
@@ -983,21 +987,23 @@ func dom_cuddling_sub_text():
 
 		saynn( RNG.pick(possible) )
 	else:
+		var a_little_longer:String = RNG.pick(["a brief moment", "a little longer", "a while longer", "an indefinite period of time", "another minute", "another moment"])
+
 		possible.append_array([
-			"{dom.You} {dom.youVerb('cuddle')} {sub.you} for a little longer.",
-			"{dom.You} {dom.youVerb('decide')} to stay with {sub.you} for a little longer.",
-			"{dom.You} {dom.youVerb('keep')} {sub.you} in {dom.yourHis} embrace for a little longer.",
+			( "{dom.You} {dom.youVerb('cuddle')} {sub.you} for "+ a_little_longer +"." ),
+			( "{dom.You} {dom.youVerb('decide')} to stay with {sub.you} for "+ a_little_longer +"." ),
+			( "{dom.You} {dom.youVerb('keep')} {sub.you} in {dom.yourHis} embrace for "+ a_little_longer +"." ),
 		])
 
 		saynn( RNG.pick(possible) )
 
 		if(domCuddlesLastedTurns == 20):
-			saynn("[say=sub]"+ RNG.pick([
+			saynn( "[say=sub]"+ RNG.pick([
 				"That bad, huh?..",
-			]) +"[/say]")
+			]) +"[/say]" )
 		elif( (domCuddlesLastedTurns > 5) && RNG.chance(10) ):
 			possible = [
-				"I guess I can stay a little longer..",
+				( "I guess I can stay a "+ RNG.pick(["little", "while"]) +" longer.." ),
 				"You've really caught me, huh..",
 			]
 
@@ -1020,7 +1026,7 @@ func dom_cuddling_sub_text():
 					"This feels comforting.",
 				])
 
-			saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
+			saynn( "[say=sub]"+ RNG.pick(possible) +"[/say]" )
 
 	addAction("stay", "Stay a while", "Make it last just a little longer.", "default", 1.0, 60, {})
 	var domLeaveProbability:float = -0.3 + 0.2 * domCuddlesLastedTurns
@@ -1040,18 +1046,16 @@ func dom_messy_kissing_sub_text():
 	var sub = getRoleChar("sub")
 
 	var both_youThem = "you" if( isPlayerInvolved() ) else "them"
-	var sub_yours = "yours" if sub.isPlayer() else "{sub.nameS}"
-	var sub_yoursHis = "yours" if sub.isPlayer() else ( "theirs" if ( sub.heShe() == "they" ) else "{sub.his}" )
 
-	var possible = []
+	var possible:Array = []
 
 	if(domMessyKissingLastedTurns == 0):
 		if(subWasPinnedToTheGround):
 			possible.append_array([
 				(
-						"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} spine, moving closer in to force a lustful, messy kiss onto {sub.yourHis} lips. {dom.YouHe} {dom.youVerb('hold')} back every now and then, "
+						"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} spine, moving closer in to force a lustful, messy kiss onto {sub.yourHis} lips. {dom.YouHe} {dom.youHeVerb('hold')} back every now and then, "
 					+ (
-							"to keep {sub.youHim} begging for more, as {dom.youHe} {dom.youVerb('leave')} trails"
+							"to keep {sub.youHim} begging for more, as {dom.youHe} {dom.youHeVerb('leave')} trails"
 						if( dom.isBlindfolded() || sub.isBlindfolded() )
 						else "leaving trails"
 					)
@@ -1065,24 +1069,26 @@ func dom_messy_kissing_sub_text():
 			])
 		else:
 			possible.append_array([
-				"{dom.You} {dom.youVerb('surge')} forward, pinning {sub.you} underneath and pressing {dom.yourHis} lips close to "+ sub_yoursHis +", to deliver a sloppy, passionate kiss. A plentiful of saliva is forced into {sub.yourHis} mouth, as {dom.your} paws roam all over, leaving {sub.youHim} no room to fight back.",
+				"{dom.You} {dom.youVerb('surge')} forward, pinning {sub.you} underneath and pressing {dom.yourHis} lips close to {sub.yoursHis}, to deliver a sloppy, passionate kiss. A plentiful of saliva is forced into {sub.yourHis} mouth, as {dom.your} paws roam all over, leaving {sub.youHim} no room to fight back.",
 			])
 
 		saynn( RNG.pick(possible) )
 	else:
+		var a_little_longer:String = RNG.pick(["a brief moment", "a little longer", "a while longer", "a whole minute", "an indefinite period of time", "another few seconds", "another moment"])
+
 		possible.append_array([
-			"{dom.You} {dom.youVerb('make')} out with {sub.you} for a little longer.",
-			"{dom.You} {dom.youVerb('roll')} {dom.yourHis} tongue with "+ sub_yours +" for a little longer.",
-			"{dom.You} {dom.youAre} unable to stop, continuing kissing {sub.you} for a little longer.",
-			"{dom.You} {dom.youVerb('continue')} forcing saliva into {sub.your} mouth for a little longer.",
-			"{dom.You} briefly {dom.youVerb('focus', 'focuses')} on {sub.your} "+ RNG.pick(["upper", "lower"]) +" lip, kissing {sub.youHim} for a little longer.",
+			( "{dom.You} {dom.youVerb('make')} out with {sub.you} for "+ a_little_longer +"." ),
+			( "{dom.You} {dom.youVerb('roll')} {dom.yourHis} tongue with {sub.yours} for "+ a_little_longer +"." ),
+			( "{dom.You} {dom.youAre} unable to stop, continuing kissing {sub.you} for "+ a_little_longer +"." ),
+			( "{dom.You} {dom.youVerb('continue')} forcing saliva into {sub.your} mouth for "+ a_little_longer +"." ),
+			( "{dom.You} briefly {dom.youVerb('focus', 'focuses')} on {sub.your} "+ RNG.pick(["upper", "lower"]) +" lip, kissing {sub.youHim} for "+ a_little_longer +"." ),
 		])
 
 		saynn( RNG.pick(possible) )
 
 		if( (domMessyKissingLastedTurns > 3) && RNG.chance(20) ):
-			var soundsLen = RNG.randi_range(3, 6)
-			var sounds = "M"
+			var soundsLen:int = RNG.randi_range(3, 6)
+			var sounds:String = "M"
 
 			for n in soundsLen:
 				sounds += RNG.pick(["f", "h", "m"])
@@ -1123,17 +1129,17 @@ func dom_stopped_messy_kissing_sub_do(_id:String, _args:Dictionary, _context:Dic
 func dom_cuffed_guard_sub_text():
 	var subPawn = getRolePawn("sub")
 
-	var subIsCoward = subPawn.scorePersonalityMax({ PersonalityStat.Coward: 1.0 }) > 0.4
+	var subIsCoward:bool = subPawn.scorePersonalityMax({ PersonalityStat.Coward: 1.0 }) > 0.4
 
 	saynn( RNG.pick([
 		"{dom.You} {dom.youVerb('rummage')} through {sub.your} belongings, hoping to find a particular type of gear, favored by the guards to exercise authority upon others.",
 	]) )
 
 	saynn( RNG.pick([
-		"The chances are in {dom.yourHis} favor, and {dom.youHe} {dom.youVerb('manage')} to acquire a set of metal cuffs.",
+		"The chances are in {dom.yourHis} favor, and {dom.youHe} {dom.youHeVerb('manage')} to acquire a set of metal cuffs.",
 	]) )
 
-	var possible = []
+	var possible:Array = []
 
 	if(subIsCoward):
 		possible.append_array([
@@ -1146,7 +1152,7 @@ func dom_cuffed_guard_sub_text():
 			"Those are not yours to utilize, put them back. Immediately."
 		])
 
-	saynn("[say=sub]"+RNG.pick(possible)+"[/say]")
+	saynn( "[say=sub]"+RNG.pick(possible)+"[/say]" )
 
 	saynn( RNG.pick([
 		"{dom.You} promptly {dom.youVerb('make')} use of the cuffs to disempower the pawn upholding an unjust system.",
@@ -1160,7 +1166,7 @@ func dom_cuffed_guard_sub_text():
 		"Oh, so you don't like it when it's you the rules are applied to?",
 	])
 
-	saynn("[say=dom]"+RNG.pick(possible)+"[/say]")
+	saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 
 	addAction("leave", "Leave", "Leave them here.", "default", 1.0, 60, {})
 
@@ -1174,11 +1180,11 @@ func dom_confirming_whether_to_collar_sub_text():
 	var sub = getRoleChar("sub")
 
 	saynn( RNG.pick([
-		"{sub.You} {sub.youVerb('do', 'does')} not have a collar on {sub.yourHis} neck. If {dom.youHe} {dom.youVerb('have', 'has')} a spare slave collar, would {dom.youHe} like to make {sub.youHim} wear it? It will stay with {sub.youHim} for a long time.",
+		"{sub.You} {sub.youDo} not have a collar on {sub.yourHis} neck. If {dom.youHe} {dom.youHaveHeHas} a spare slave collar, would {dom.youHe} like to make {sub.youHim} wear it? It will stay with {sub.youHim} for a long time.",
 	]) )
 
-	var domHasSlaveCollar = dom.getInventory().hasItemsWithTag(ItemTag.AllowsEnslaving)
-	var subHasNeckSlotEquipped = sub.getInventory().hasSlotEquipped(InventorySlot.Neck)
+	var domHasSlaveCollar:bool = dom.getInventory().hasItemsWithTag(ItemTag.AllowsEnslaving)
+	var subHasNeckSlotEquipped:bool = sub.getInventory().hasSlotEquipped(InventorySlot.Neck)
 
 	if(domHasSlaveCollar && !subHasNeckSlotEquipped):
 		addAction("yes", "Yes", "Use a slave collar from your inventory to force it on them.", "default", 1.0, 60, {})
@@ -1223,9 +1229,9 @@ func dom_choosing_leash_walking_variant_text():
 		"{dom.You} {dom.youVerb('prepare')} the leash, briefly fidgeting its clip around {dom.yourHis} digits while deliberating on the details.",
 	]) )
 
-	var subWasUndressedOrIsNaked = ( subWasUndressed || sub.isFullyNaked() )
+	var subWasUndressedOrIsNaked:bool = ( subWasUndressed || sub.isFullyNaked() )
 
-	var ACTION_NAME_ON_ALL_FOURS = "On all fours"
+	var ACTION_NAME_ON_ALL_FOURS:String = "On all fours"
 	if( subWasUndressedOrIsNaked && !sub.hasBoundArms() ):
 		addAction("all_fours", ACTION_NAME_ON_ALL_FOURS, "Make them crawl on all fours like a good pet.", "default", 0.6, 60, {})
 	elif(!subWasUndressedOrIsNaked):
@@ -1250,22 +1256,22 @@ func dom_leash_walking_sub_text():
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
 
-	var subPersonalityMeanScore = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
-	var subIsMean = subPersonalityMeanScore > 0.4
+	var subPersonalityMeanScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean:bool = subPersonalityMeanScore > 0.4
 
 	var subPersonalitySubbyScore = subPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
-	var subIsSubby = subPersonalitySubbyScore > 0.4
-	var subIsDommy = subPersonalitySubbyScore < -0.4
+	var subIsSubby:bool = subPersonalitySubbyScore > 0.4
+	var subIsDommy:bool = subPersonalitySubbyScore < -0.4
 
-	var subPersonalityImpatientScore = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
-	var subIsImpatient = subPersonalityImpatientScore > 0.4
+	var subPersonalityImpatientScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Impatient: 1.0 })
+	var subIsImpatient:bool = subPersonalityImpatientScore > 0.4
 
-	var sub_obediently = RNG.pick(["obediently", "submissively", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
+	var sub_obediently:String = RNG.pick(["obediently", "submissively", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
 
 	var domRoomID:String = domPawn.getLocation()
 	# var domRoom = GM.world.getRoomByID(domRoomID)
 
-	var possible = []
+	var possible:Array = []
 
 	if(domLeashedWalkTraversedCellsCount == 0):
 		if(domLeashedWalkHelpedSubStand):
@@ -1278,7 +1284,7 @@ func dom_leash_walking_sub_text():
 			]) )
 
 			possible = getDialogueLines_attachedLeashForWalk(dom)
-			saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+			saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 		else:
 			saynn( RNG.pick([
 				"{dom.You} {dom.youVerb('lean')} forward and {dom.youVerb('attach', 'attaches')} a leash to {sub.your} collar.",
@@ -1286,15 +1292,15 @@ func dom_leash_walking_sub_text():
 
 			if(domLeashedWalkOnAllFours):
 				possible = getDialogueLines_commandOnAllFoursForLeashedWalk(dom)
-				saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+				saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 
 				saynn( RNG.pick([
 					"{sub.You} "+ sub_obediently +" {sub.youVerb('get')} on {sub.yourHis} knees, then on {sub.yourHis} four paws, awaiting what comes next.",
-					"{sub.You} {sub.youVerb('lower')} {sub.yourself} to {sub.yourHis} knees, "+ sub_obediently +" bending forward and getting on all fours.",
+					"{sub.You} {sub.youVerb('lower')} {sub.yourselfThemself} to {sub.yourHis} knees, "+ sub_obediently +" bending forward and getting on all fours.",
 				]) )
 			else:
 				possible = getDialogueLines_attachedLeashForWalk(dom)
-				saynn("[say=dom]"+ RNG.pick(possible) +"[/say]")
+				saynn( "[say=dom]"+ RNG.pick(possible) +"[/say]" )
 	elif(domLeashedWalkReachedTargetLoc):
 		saynn( RNG.pick([
 			"{dom.You} {dom.youVerb('make')} a brief stop, still holding {sub.you} on a leash.",
@@ -1310,24 +1316,24 @@ func dom_leash_walking_sub_text():
 		possible.append_array([
 			"{sub.You} {sub.youAre} being pulled around, crawling on all fours as {dom.you} {dom.youVerb('hold')} power over {sub.youHim}.",
 			"{sub.You} {sub.youAre} forced to traverse the area, crawling on all fours right next to {dom.your} hind paws.",
-			"{sub.You} {sub.youVerb('have', 'has')} no choice but to crawl behind {dom.you} on all fours, as {dom.youHe} {dom.youVerb('pull')} {sub.yourHis} leash forward.",
+			"{sub.You} {sub.youHave} no choice but to crawl behind {dom.you} on all fours, as {dom.youHe} {dom.youHeVerb('pull')} {sub.yourHis} leash forward.",
 		])
 
 		if( RNG.chance(5) ):
 			possible.append_array([
-				"{sub.Your} "+ RNG.pick(["arms", "knees"]) +" feel a little exhausted, and {sub.youHe} {sub.youVerb('struggle')} to keep up with the pace. A pull of {sub.yourHis} leash urges {sub.youHim} to catch up.",
+				"{sub.Your} "+ RNG.pick(["arms", "knees"]) +" feel a little exhausted, and {sub.youHe} {sub.youHeVerb('struggle')} to keep up with the pace. A pull of {sub.yourHis} leash urges {sub.youHim} to catch up.",
 			])
 
 		saynn( RNG.pick(possible) )
 
 		if( RNG.chance(10) ):
 			possible = getDialogueLines_walkingLeashedOnAllFours(sub)
-			saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
+			saynn( "[say=sub]"+ RNG.pick(possible) +"[/say]" )
 	elif(!domLeashedWalkOnAllFours):
 		possible.append_array([
-			"{sub.You} {sub.youAre} being pulled around by {dom.you} as {dom.youHe} {dom.youVerb('hold')} {sub.youHim} on a leash.",
-			"{sub.You} {sub.youAre} forced to traverse the area while {dom.you} {dom.youVerb('have', 'has')} {sub.youHim} on the leash.",
-			"{sub.You} {sub.youVerb('have', 'has')} no choice but to follow, as {dom.you} {dom.youVerb('pull')} {sub.yourHis} leash forward.",
+			"{sub.You} {sub.youAre} being pulled around by {dom.you} as {dom.youHe} {dom.youHeVerb('hold')} {sub.youHim} on a leash.",
+			"{sub.You} {sub.youAre} forced to traverse the area while {dom.you} {dom.youHave} {sub.youHim} on the leash.",
+			"{sub.You} {sub.youHave} no choice but to follow, as {dom.you} {dom.youVerb('pull')} {sub.yourHis} leash forward.",
 		])
 
 		if( RNG.chance(5) ):
@@ -1354,13 +1360,13 @@ func dom_leash_walking_sub_text():
 
 	if(!domLeashedWalkStoodStill):
 		if(domRoomID == "hall_checkpoint"):
-			saynn("[say=cp_guard]"+ RNG.pick([
+			saynn( "[say=cp_guard]"+ RNG.pick([
 				"Mm, that's bold.",
-			]) +"[/say]")
+			]) +"[/say]" )
 		elif( (domRoomID == "yard_novaspot") && (GM.ES != null) && !GM.ES.eventCheck("NovaBusy") ):
-			saynn("[say=nova]"+ RNG.pick([
+			saynn( "[say=nova]"+ RNG.pick([
 				"I see you've got a pet of your own, you little rascal~.",
-			]) +"[/say]")
+			]) +"[/say]" )
 
 			if( !subIsMean && RNG.chance(50) ):
 				saynn("[say=sub]I- I'm not-..[/say]")
@@ -1368,10 +1374,10 @@ func dom_leash_walking_sub_text():
 			if( subIsSubby && RNG.chance(20) ):
 				saynn("[say=sub]O- Oh, lockers..[/say]")
 			else:
-				saynn("[say=dom]"+ RNG.pick([
+				saynn( "[say=dom]"+ RNG.pick([
 					"What, thought I'm getting you to shower? You're better off as a total mess.",
 					"Oh, don't misunderstand, you don't get to take a shower today.",
-				]) +"[/say]")
+				]) +"[/say]" )
 
 			if( !subIsMean && RNG.chance(20) ):
 				saynn("{sub.You} {sub.youVerb('whine')}.")
@@ -1461,11 +1467,7 @@ func dom_leash_walking_sub_do(_id:String, _args:Dictionary, _context:Dictionary)
 
 
 func dom_stopped_leash_walking_sub_text():
-	var dom = getRoleChar("dom")
-
-	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-
-	saynn("{dom.You} {dom.youVerb('feel')} like "+ dom_you_veHe_s +" had enough fun walking {sub.you} around. {dom.YouHe} {dom.youVerb('approach', 'approaches')} {sub.youHim}, detaching the leash from {sub.yourHis} collar.")
+	saynn("{dom.You} {dom.youVerb('feel')} like {dom.youveTheyve} had enough fun walking {sub.you} around. {dom.YouHe} {dom.youHeVerb('approach', 'approaches')} {sub.youHim}, detaching the leash from {sub.yourHis} collar.")
 
 	addAction("continue", "Continue", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
@@ -1504,7 +1506,7 @@ func dom_left_sub_alone_text():
 				"I thought we were about to do something..",
 			])
 
-		saynn("[say=sub]"+ RNG.pick(possible) +"[/say]")
+		saynn( "[say=sub]"+ RNG.pick(possible) +"[/say]" )
 
 	addAction("leave", "Leave", "Time to go.", "default", 1.0, 30, {})
 
@@ -1626,14 +1628,14 @@ func incl_sex_turn_dialogue_text():
 		if(topCameThisTurn):
 			dialogueLine = applyOrgasmWaveToDialogueLine(dialogueLine)
 
-		saynn("[say="+ dialogueLinesCharacterRole +"]"+ dialogueLine +"[/say]")
+		saynn( "[say="+ dialogueLinesCharacterRole +"]"+ dialogueLine +"[/say]" )
 
 	var reactionLinesCharacterRole:String = "dom" if( getRoleChar("dom") == reactionLinesCharacter ) else "sub"
 
 	if( reactionLines.size() > 0 ):
 		var reactionLine:String = RNG.pick(reactionLines)
 
-		saynn("[say="+ reactionLinesCharacterRole +"]"+ reactionLine +"[/say]")
+		saynn( "[say="+ reactionLinesCharacterRole +"]"+ reactionLine +"[/say]" )
 
 func incl_sex_turn_do_preTick(_id:String):
 	var dom = getRoleChar("dom")
@@ -2084,6 +2086,7 @@ func saveData():
 	data["subMightEndSexEarly"] = subMightEndSexEarly
 	data["subPetNames"] = subPetNames
 
+	data["domWasUninterestedInSexEngineAction"] = domWasUninterestedInSexEngineAction
 	data["domIsBottoming"] = domIsBottoming
 	data["domHasImmediatelyLeftConsentingSub"] = domHasImmediatelyLeftConsentingSub
 	data["domToggleableMouthPlayMightPerform"] = domToggleableMouthPlayMightPerform
@@ -2126,6 +2129,7 @@ func loadData(_data):
 	subMightEndSexEarly = SAVE.loadVar(_data, "subMightEndSexEarly", false)
 	subPetNames = SAVE.loadVar(_data, "subPetNames", ["creature"])
 
+	domWasUninterestedInSexEngineAction = SAVE.loadVar(_data, "domWasUninterestedInSexEngineAction", false)
 	domIsBottoming = SAVE.loadVar(_data, "domIsBottoming", false)
 	domHasImmediatelyLeftConsentingSub = SAVE.loadVar(_data, "domHasImmediatelyLeftConsentingSub", false)
 	domToggleableMouthPlayMightPerform = SAVE.loadVar(_data, "domToggleableMouthPlayMightPerform", false)
@@ -2387,7 +2391,7 @@ func getSexPoseActionDescPrefix(pose) -> String:
 # For some creatures this will be incorrect, sorry..
 func getBoyBoun(characterRole:String) -> String:
 	var character = getRoleChar(characterRole)
-	
+
 	var boyNoun = (
 			RNG.pick(["thing", "critter"])
 		if( character.getGender() == Gender.Other )
@@ -2401,7 +2405,7 @@ func getBoyBoun(characterRole:String) -> String:
 			)
 		)
 	)
-	
+
 	return boyNoun
 
 func getPenisNoun() -> String:
@@ -2546,13 +2550,9 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 	var both_YourTheir = "Your" if( isPlayerInvolved() ) else "Their"
 
 	var dom_gently = RNG.pick(["gently", "delicately", "playfully"]) if(domIsKind) else RNG.pick(["playfully", "assertively", "greedily"]) if(!domIsMean) else RNG.pick(["greedily", "roughly", "harshly", "ruthlessly"])
-	var dom_you_reHe_s = "you're" if dom.isPlayer() else ( "they're" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-	var dom_yoursHis = "yours" if dom.isPlayer() else ( "theirs" if ( dom.heShe() == "they" ) else "{dom.his}" )
 
 	var sub_obediently = RNG.pick(["obediently", "submissively", "willingly"]) if(subIsSubby) else RNG.pick(["readily"]) if(!subIsDommy) else RNG.pick(["reluctantly"])
 	var sub_willingly = "willingly" if(sub_obediently == "obediently") else sub_obediently
-	var sub_you_reHe_s = "you're" if sub.isPlayer() else ( "they're" if ( sub.heShe() == "they" ) else "{sub.he}'s" )
-	var sub_yoursHis = "yours" if sub.isPlayer() else ( "theirs" if ( sub.heShe() == "they" ) else "{sub.his}" )
 
 	var currentSexPose = getCurrentSexPose()
 
@@ -2573,32 +2573,32 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 	if(currentSexPose.id == "mating_press"):
 		if(subWasPinnedToTheGround):
 			return [
-				"{dom.You} {dom.youVerb('roll')} {sub.you} on {sub.yourHis} back, "+ dom_gently +" folding {sub.yourHis} legs up toward {sub.yourHis} shoulders, pressing {dom.yourself} close, and positioning {dom.yourHis} "+ top_penis +" next to {sub.yourHis} exposed, "+ bottom_drippy_anus +"."
+				"{dom.You} {dom.youVerb('roll')} {sub.you} on {sub.yourHis} back, "+ dom_gently +" folding {sub.yourHis} legs up toward {sub.yourHis} shoulders, pressing {dom.yourselfThemself} close, and positioning {dom.yourHis} "+ top_penis +" next to {sub.yourHis} exposed, "+ bottom_drippy_anus +"."
 			]
 		else:
 			return [
-				"{dom.You} {dom.youVerb('turn')} {sub.you} around, "+ dom_gently +" forcing {sub.youHim} down on {sub.yourHis} spine, firmly pressed against the floor in a mating press position. {dom.YouHe} then {dom.youVerb('press', 'presses')} {dom.yourself} close, aligning {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
+				"{dom.You} {dom.youVerb('turn')} {sub.you} around, "+ dom_gently +" forcing {sub.youHim} down on {sub.yourHis} spine, firmly pressed against the floor in a mating press position. {dom.YouHe} then {dom.youHeVerb('press', 'presses')} {dom.yourselfThemself} close, aligning {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
 			]
 
 	if(currentSexPose.id == "missionary"):
 		if(subWasPinnedToTheGround):
 			return [
-				"{dom.You} {dom.youVerb('turn')} {sub.you} onto {sub.yourHis} back, approaching closer and "+ dom_gently +" pushing {dom.yourHis} thighs into {sub.yourHis}, until "+ sub_you_reHe_s +" pinned by {dom.youHim} in a missionary pose, tip of {dom.yourHis} "+ top_penis +" touching the edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
+				"{dom.You} {dom.youVerb('turn')} {sub.you} onto {sub.yourHis} back, approaching closer and "+ dom_gently +" pushing {dom.yourHis} thighs into {sub.yoursHis}, until {sub.youreTheyre} pinned by {dom.youHim} in a missionary pose, tip of {dom.yourHis} "+ top_penis +" touching the edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
 				( domCommandingToGetIntoPose + "{sub.You} "+ sub_willingly +" {sub.youVerb('give')} in, lying flat on {sub.yourHis} spine. {dom.You} "+ dom_gently +" {dom.youVerb('pin')} {sub.youHim} against the floor, before taking a missionary pose, and positioning {dom.yourHis} "+ top_penis +" right next to {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"." ),
 			]
 		else:
 			return [
-				"{dom.You} "+ dom_gently +" {dom.youVerb('pin')} {sub.your} body against the floor, placing {dom.yourself} between {sub.yourHis} legs, and aligning {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
+				"{dom.You} "+ dom_gently +" {dom.youVerb('pin')} {sub.your} body against the floor, placing {dom.yourselfThemself} between {sub.yourHis} legs, and aligning {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
 			]
 
 	if(currentSexPose.id == "raised_leg"):
 		if(subWasPinnedToTheGround):
 			return [
-				"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} back, "+ dom_gently +" getting hold of {sub.yourHis} "+ RNG.pick(["left", "right"]) +" leg and lifting it to dangle near {dom.yourHis} face, as {dom.youHe} {dom.youVerb('rub')} {dom.yourHis} "+ top_penis +" close to {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
+				"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} back, "+ dom_gently +" getting hold of {sub.yourHis} "+ RNG.pick(["left", "right"]) +" leg and lifting it to dangle near {dom.yourHis} face, as {dom.youHe} {dom.youHeVerb('rub')} {dom.yourHis} "+ top_penis +" close to {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
 			]
 		else:
 			return [
-				"With a circular motion of {dom.yourHis} paw, {dom.you} {dom.youVerb('command')} {sub.you} to turn around. {sub.YouHe} "+ sub_obediently +" {sub.youVerb('oblige')}, and {dom.youHe} {dom.youVerb('push', 'pushes')} {sub.youHim} on {sub.yourHis} spine, "+ dom_gently +" lifting one of {sub.yourHis} legs. As {sub.yourHis} hind paw sways intimately close to {dom.yourHis} snout, {dom.you} {dom.youVerb('press', 'presses')} {dom.yourself} close, brushing {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
+				"With a circular motion of {dom.yourHis} paw, {dom.you} {dom.youVerb('command')} {sub.you} to turn around. {sub.YouHe} "+ sub_obediently +" {sub.youHeVerb('oblige')}, and {dom.youHe} {dom.youHeVerb('push', 'pushes')} {sub.youHim} on {sub.yourHis} spine, "+ dom_gently +" lifting one of {sub.yourHis} legs. As {sub.yourHis} hind paw sways intimately close to {dom.yourHis} snout, {dom.you} {dom.youVerb('press', 'presses')} {dom.yourselfThemself} close, brushing {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"."
 			]
 
 	if(currentSexPose.id == "against_a_wall"):
@@ -2608,12 +2608,12 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "pinned_into_wall"):
 		return [
-			"{dom.You} {dom.youVerb('grab')} {sub.your} "+ RNG.pick(["left", "right"]) +" hind paw, "+ dom_gently +" shoving {sub.youHim} into the nearest wall. As {sub.youHe} hastily {sub.youVerb('raise')} {sub.yourHis} arms in hopes to soften the impact, {dom.you} readily {dom.youVerb('pin')} {sub.youHim} against the wall, pressing {dom.yourHis} "+ top_penis +" against {sub.yourHis} vulnerable, "+ bottom_drippy_anus +".",
+			"{dom.You} {dom.youVerb('grab')} {sub.your} "+ RNG.pick(["left", "right"]) +" hind paw, "+ dom_gently +" shoving {sub.youHim} into the nearest wall. As {sub.youHe} hastily {sub.youHeVerb('raise')} {sub.yourHis} arms in hopes to soften the impact, {dom.you} readily {dom.youVerb('pin')} {sub.youHim} against the wall, pressing {dom.yourHis} "+ top_penis +" against {sub.yourHis} vulnerable, "+ bottom_drippy_anus +".",
 		]
 
 	if(currentSexPose.id == "stand_and_carry"):
 		return [
-			"{dom.You} {dom.youVerb('turn')} {sub.you} towards {dom.yourself}"+ ( ", forcing a wet kiss onto {sub.yourHis} lips, and reaching" if( !dom.isOralBlocked() && !sub.isOralBlocked() ) else " and {dom.youVerb('reach', 'reaches')}" ) +" around to grab {sub.yourHis} rear, swiftly lifting {sub.youHim} up in the air, and [color="+ getSensationColor("pain_severe") +"]impatiently slamming {sub.youHim} into the nearest wall[/color]. As "+ sub_you_reHe_s +" helplessly squished between {dom.you} and the wall in an incredibly hot and vulnerable pose, {dom.youHe} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
+			"{dom.You} {dom.youVerb('turn')} {sub.you} towards {dom.yourselfThemself}"+ ( ", forcing a wet kiss onto {sub.yourHis} lips, and reaching" if( !dom.isOralBlocked() && !sub.isOralBlocked() ) else " and {dom.youVerb('reach', 'reaches')}" ) +" around to grab {sub.yourHis} rear, swiftly lifting {sub.youHim} up in the air, and [color="+ getSensationColor("pain_severe") +"]impatiently slamming {sub.youHim} into the nearest wall[/color]. As {sub.youreTheyre} helplessly squished between {dom.you} and the wall in an incredibly hot and vulnerable pose, {dom.youHe} {dom.youHeVerb('position')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
 			(
 					"The movements that occurred afterwards have been largely lost to passion. {sub.You} felt [color="+ getSensationColor("pain_severe") +"]sudden but momentary pain in {sub.yourHis} spine[/color] as it was forcibly slammed against a flat, rough surface. "
 				+ (
@@ -2626,8 +2626,8 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "all_fours"):
 		eventLines.append_array([
-			"{dom.You} {dom.youVerb('lift')} {dom.yourHis} weight off {sub.you} and {dom.youVerb('grab')} both of {sub.yourHis} thighs, slightly rising them above the ground, before folding {sub.your} legs to force {sub.youHim} to use {sub.yourHis} knees for support. {sub.YouHe} instinctively uses {sub.yourHis} arms to support {sub.yourHis} chest, as {dom.youHe} {dom.youVerb('align')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
-			( domCommandingToGetIntoPose + "{sub.You} "+ sub_willingly +" {sub.youVerb('obey')}, getting on all fours, as {dom.you} {dom.youVerb('position')} {dom.yourself} behind {sub.yourHis} butt, pressing {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"." ),
+			"{dom.You} {dom.youVerb('lift')} {dom.yourHis} weight off {sub.you} and {dom.youVerb('grab')} both of {sub.yourHis} thighs, slightly rising them above the ground, before folding {sub.your} legs to force {sub.youHim} to use {sub.yourHis} knees for support. {sub.YouHe} instinctively {sub.youHeVerb('use')} {sub.yourHis} arms to support {sub.yourHis} chest, as {dom.youHe} {dom.youHeVerb('align')} {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +".",
+			( domCommandingToGetIntoPose + "{sub.You} "+ sub_willingly +" {sub.youVerb('obey')}, getting on all fours, as {dom.you} {dom.youVerb('position')} {dom.yourselfThemself} behind {sub.yourHis} butt, pressing {dom.yourHis} "+ top_penis +" against {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +"." ),
 		])
 
 		if( sub.hasTail() ):
@@ -2639,22 +2639,22 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 	if(currentSexPose.id == "low_doggy"):
 		return [
-			"{dom.You} {dom.youVerb('grab')} one of {sub.your} thighs, pulling it just a little closer to {dom.yourself}. The "+( "sight alone already leaves" if( !dom.isBlindfolded() ) else "curves alone already leave" )+" {dom.youHim} drooling. {dom.YouHe} "+ dom_gently +" {dom.youVerb('pin')} {sub.yourHis} spine to the floor with {dom.yourHis} other paw, and {dom.youVerb('brush', 'brushes')} the tip of {dom.yourHis} "+ top_penis +" over the sensitive edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", as "+ dom_you_reHe_s +" about to claim what's "+ dom_yoursHis +".",
+			"{dom.You} {dom.youVerb('grab')} one of {sub.your} thighs, pulling it just a little closer to {dom.yourselfThemself}. The "+( "sight alone already leaves" if( !dom.isBlindfolded() ) else "curves alone already leave" )+" {dom.youHim} drooling. {dom.YouHe} "+ dom_gently +" {dom.youHeVerb('pin')} {sub.yourHis} spine to the floor with {dom.yourHis} other paw, and {dom.youVerb('brush', 'brushes')} the tip of {dom.yourHis} "+ top_penis +" over the sensitive edges of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +", as {dom.youreTheyre} about to claim what's {dom.yoursTheirs}.",
 			( domCommandingToGetIntoPose + "{sub.You} {sub.youVerb('respond')} with a quiet whine, surrendering {sub.yourHis} body further down into the floor, and "+ sub_obediently +" raising {sub.yourHis} rear for {dom.you} to have {dom.yourHis} way with {sub.youHim}. {dom.YourHis} "+ top_penis +" throbs "+ ( ( "as {dom.yourHis} paws hungrily roam near {sub.yourHis} willingly presented "+ bottom_drippy_anus +"." ) if( dom.isBlindfolded() or RNG.chance(50) ) else ( "from the sight of {sub.yourHis} "+ bottom_drippy_stretched_wide_anus +" being willingly presented to {dom.youHim}." ) ) ),
 		]
 
 	if(currentSexPose.id == "cowgirl"):
 		return [
 			(
-					( "{sub.You} {sub.youVerb('lay')} on {sub.yourHis} spine, expecting {dom.you}. Without hesitation, {dom.youHe} {dom.youVerb('pounce')} at {sub.youHim}, "+ dom_gently +" stradling, " )
+					( "{sub.You} {sub.youVerb('lay')} on {sub.yourHis} spine, expecting {dom.you}. Without hesitation, {dom.youHe} {dom.youHeVerb('pounce')} at {sub.youHim}, "+ dom_gently +" stradling, " )
 				+ (
-						( "and playfully frotting "+ both_yourTheir +" "+ ( both_penises if(both_penises != "") else getPenisNounPlural() ) +" together until "+ dom_you_reHe_s +" ready to ride "+ sub_yoursHis +"." )
+						( "and playfully frotting "+ both_yourTheir +" "+ ( both_penises if(both_penises != "") else getPenisNounPlural() ) +" together until {dom.youreTheyre} ready to ride {sub.yoursHis}." )
 					if( dom.hasBodypart(BodypartSlot.Penis) && RNG.chance(50) )
 					else ( "and rubbing {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" against {sub.yourHis} "+ top_penis +"." )
 				)
 			),
 			(
-					( domCommandingToGetIntoPose + "{sub.You} {sub.youVerb('nod')}, "+ sub_willingly +" positioning {sub.yourself} on the ground in an ideal pose for {dom.you} to ride {sub.youHim}. {dom.YouHe} "+ dom_gently +" {dom.youVerb('stradle')} {sub.youHim}, " )
+					( domCommandingToGetIntoPose + "{sub.You} {sub.youVerb('nod')}, "+ sub_willingly +" positioning {sub.yourselfThemself} on the ground in an ideal pose for {dom.you} to ride {sub.youHim}. {dom.YouHe} "+ dom_gently +" {dom.youHeVerb('stradle')} {sub.youHim}, " )
 				+ (
 						( "rubbing "+ both_yourTheir +" "+ ( both_penises if(both_penises != "") else getPenisNounPlural() ) +" together for a brief moment." )
 					if( dom.hasBodypart(BodypartSlot.Penis) && RNG.chance(50) )
@@ -2672,26 +2672,26 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 					if ( dom.isBlindfolded() || sub.isBlindfolded() || RNG.chance(30) )
 					else "winking at {dom.you}"
 				)
-				+ ( ". "+ RNG.pick(["Soon after", "Not long after"]) +", {dom.youHe} {dom.youVerb('climb')} on and "+ dom_gently +" {dom.youVerb('stradle')} {sub.youHim}, with {dom.yourHis} body tilted back, and {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" brushing against the tip of {sub.yourHis} "+ top_penis +"." )
+				+ ( ". "+ RNG.pick(["Soon after", "Not long after"]) +", {dom.youHe} {dom.youHeVerb('climb')} on and "+ dom_gently +" {dom.youVerb('stradle')} {sub.youHim}, with {dom.yourHis} body tilted back, and {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" brushing against the tip of {sub.yourHis} "+ top_penis +"." )
 			),
-			( domCommandingToGetIntoPose + "{sub.You} "+ sub_willingly +" {sub.youVerb('follow')} {dom.your} command, slowly positioning {sub.yourself} on the ground, ready for {dom.youHim} to use {sub.youHim} for {dom.yourHis} pleasure. {dom.YouHe} nicely {dom.youVerb('position')} {dom.yourHis} thighs above "+ sub_yoursHis +", tilting {dom.yourHis} relaxed body backwards. {sub.You} can feel the edges of {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" touch the tip of {sub.yourHis} "+ top_penis +"." ),
+			( domCommandingToGetIntoPose + "{sub.You} "+ sub_willingly +" {sub.youVerb('follow')} {dom.your} command, slowly positioning {sub.yourselfThemself} on the ground, ready for {dom.youHim} to use {sub.youHim} for {dom.yourHis} pleasure. {dom.YouHe} nicely {dom.youHeVerb('position')} {dom.yourHis} thighs above {sub.yoursHis}, tilting {dom.yourHis} relaxed body backwards. {sub.You} can feel the edges of {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +" touch the tip of {sub.yourHis} "+ top_penis +"." ),
 		]
 
 	if(currentSexPose.id == "cowgirl_reverse"):
 		return [
 			(
-					"{sub.You} {sub.youVerb('position')} {sub.yourself} on the ground, ready for {dom.you} to ride {sub.youHim} in a reverse cowgirl position. {dom.YouHe} "+ dom_gently +" {dom.youVerb('stradle')} {sub.youHim}, "
+					"{sub.You} {sub.youVerb('position')} {sub.yourselfThemself} on the ground, ready for {dom.you} to ride {sub.youHim} in a reverse cowgirl position. {dom.YouHe} "+ dom_gently +" {dom.youHeVerb('stradle')} {sub.youHim}, "
 				+ (
 						(		( "briefly frotting "+ both_yourTheir +" "+ both_penises +" together" )
 							if(both_penises != "")
-							else ( "briefly frotting {sub.yourHis} "+ top_penis +" with "+ dom_yoursHis )
+							else ( "briefly frotting {sub.yourHis} "+ top_penis +" with {dom.yoursHis}" )
 						)
 					if( dom.hasBodypart(BodypartSlot.Penis) && RNG.chance(50) )
-					else "briefly rubbing {dom.yourself} against {sub.yourHis} "+ top_penis
+					else "briefly rubbing {dom.yourselfThemself} against {sub.yourHis} "+ top_penis
 				)
 				+ ", to "+ RNG.pick(["tease", "entice"]) +" {sub.youHim} even more."
 			),
-			( domCommandingToGetIntoPose + "Before {sub.you} {sub.youVerb('have', 'has')} a chance to process what's being asked of {sub.youHim}, {sub.yourHis} body has already assumed the position on the ground, allowing {dom.you} to "+ dom_gently +" {dom.youVerb('stradle')} {sub.youHim}, and rub {dom.yourself} all over." ),
+			( domCommandingToGetIntoPose + "Before {sub.you} {sub.youHave} a chance to process what's being asked of {sub.youHim}, {sub.yourHis} body has already assumed the position on the ground, allowing {dom.you} to "+ dom_gently +" stradle {sub.youHim}, and rub {dom.yourselfThemself} all over." ),
 		]
 
 	if(currentSexPose.id == "lotus"):
@@ -2706,7 +2706,7 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 					)
 				),
 				(
-						( domCommandingToGetIntoPose + "{sub.You} instinctively {sub.youVerb('obey')}, perhaps trained for this. {dom.You} {dom.youVerb('position')} {dom.yourself} in {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.youHim}, and pressing close in an intimate embrace. " )
+						( domCommandingToGetIntoPose + "{sub.You} instinctively {sub.youVerb('obey')}, perhaps trained for this. {dom.You} {dom.youVerb('position')} {dom.yourselfThemself} in {sub.yourHis} lap, wrapping {dom.yourHis} legs around {sub.youHim}, and pressing close in an intimate embrace. " )
 					+ (
 							( both_YourTheir +" "+ both_penises +" are eagerly "+ RNG.pick(["touching", "throbbing"]) + " together." )
 						if( both_penises != "" )
@@ -2730,16 +2730,15 @@ func getEventLinesForCurrentSexPose_applyingLube() -> Array:
 	var sub = getRoleChar("sub")
 
 	var bottom_anus = getBottomAnusDesc()
-	var sub_yours = "yours" if sub.isPlayer() else "{sub.nameS}"
 
 	if(domIsBottoming):
 		var eventLines:Array = [
-			"{dom.You} {dom.youVerb('pour')} some water-based lube onto {dom.yourHis} open paw, thoroughly applying it onto {dom.yourHis} " + bottom_anus + ", while teasingly brushing {dom.yourHis} hips over "+ sub_yours +".",
+			"{dom.You} {dom.youVerb('pour')} some water-based lube onto {dom.yourHis} open paw, thoroughly applying it onto {dom.yourHis} " + bottom_anus + ", while teasingly brushing {dom.yourHis} hips over {sub.yours}.",
 		]
 
 		if( !sub.hasBoundArms() && !sub.hasBlockedHands() ):
 			eventLines.append_array([
-				"{dom.You} {dom.youVerb('grab')} hold of {sub.your} wrist, producing a few drops of lube onto {sub.yourHis} open paw, and commanding {sub.youHim} to apply it onto {dom.yourHis} "+ bottom_anus +". {sub.YouHe} {sub.youVerb('find')} it impossible to refuse..",
+				"{dom.You} {dom.youVerb('grab')} hold of {sub.your} wrist, producing a few drops of lube onto {sub.yourHis} open paw, and commanding {sub.youHim} to apply it onto {dom.yourHis} "+ bottom_anus +". {sub.YouHe} {sub.youHeVerb('find')} it impossible to refuse..",
 			])
 
 		return eventLines
@@ -2927,7 +2926,7 @@ func getBaseLinesForCurrentSexPose_bothCame() -> Array:
 
 	if(topCameInsideThisTurn):
 		baseLines.append_array([
-			baseSentence + "{top.You} {top.youVerb('have', 'has')} {bottom.your} "+ bottom_anus +" filled to the brim, while {bottom.yourHis} cum spreads everywhere.",
+			baseSentence + "{top.You} {top.youHave} {bottom.your} "+ bottom_anus +" filled to the brim, while {bottom.yourHis} cum spreads everywhere.",
 		])
 	elif(topCameOutsideThisTurn):
 		baseLines.append_array([
@@ -2947,7 +2946,7 @@ func getBaseLinesForCurrentSexPose_topCameOutside() -> Array:
 
 	if(domIsBottoming):
 		return [
-			"{bottom.You} {bottom.youVerb('pull')} away from {top.your} "+ top_penis + " just before {top.youHe} {top.youVerb('finish', 'finishes')}, letting all of {top.yourHis} cum go to waste."
+			"{bottom.You} {bottom.youVerb('pull')} away from {top.your} "+ top_penis + " just before {top.youHe} {top.youHeVerb('finish', 'finishes')}, letting all of {top.yourHis} cum go to waste."
 		]
 
 	var painted_bodyparts = "belly and thighs" if("bottomFacingTop" in currentSexPose.tags) else "neck and spine"
@@ -2957,12 +2956,8 @@ func getBaseLinesForCurrentSexPose_topCameOutside() -> Array:
 	]
 
 func getEventLinesForCurrentSexPose_afterSex() -> Array:
-	var dom = getRoleChar("dom")
-
-	var dom_you_veHe_s = "you've" if dom.isPlayer() else ( "they've" if ( dom.heShe() == "they" ) else "{dom.he}'s" )
-
 	return [
-		"{dom.You} {dom.youVerb('feel')} like "+ dom_you_veHe_s +" had enough fucking {sub.you}.",
+		"{dom.You} {dom.youVerb('feel')} like {dom.youveTheyve} had enough fucking {sub.you}.",
 	]
 
 func getFlavorLinesForCurrentSexPose_fucking() -> Array:
@@ -2980,7 +2975,7 @@ func getFlavorLinesForCurrentSexPose_fucking() -> Array:
 		if "bottomUnboundArmsGraspingAtWall" in currentSexPose.tags:
 			flavorLines.append_array([
 				"{bottom.YourHis} arms grasp at any irregularity in the wall just to retain balance.",
-				"{bottom.YouHe} {bottom.youVerb('struggle')} to maintain balance as {bottom.yourHis} arms tremble from pleasure.",
+				"{bottom.YouHe} {bottom.youHeVerb('struggle')} to maintain balance as {bottom.yourHis} arms tremble from pleasure.",
 			])
 
 		if "bottomUnboundArmsSupportingChest" in currentSexPose.tags:
@@ -2990,7 +2985,7 @@ func getFlavorLinesForCurrentSexPose_fucking() -> Array:
 
 	if "bottomBelowTop" in currentSexPose.tags:
 		flavorLines.append_array([
-			"{bottom.YouHe} {bottom.youVerb('quiver')} below {top.youHim}.",
+			"{bottom.YouHe} {bottom.youHeVerb('quiver')} below {top.youHim}.",
 		])
 
 	return flavorLines
@@ -3013,40 +3008,40 @@ func getFlavorLinesForCurrentSexPose_beingFucked() -> Array:
 
 	if(isBottomMouthClosed):
 		flavorLines.append_array([
-			"{bottom.YouHe} {bottom.youVerb('moan')} into {bottom.yourHis} closed mouth.",
+			"{bottom.YouHe} {bottom.youHeVerb('moan')} into {bottom.yourHis} closed mouth.",
 		])
 
 	if "unboundHandholding" in currentSexPose.tags:
 		if( !top.hasBoundArms() && !bottom.hasBoundArms() && !top.hasBlockedHands() && !bottom.hasBlockedHands() ):
 			flavorLines.append_array([
-				"{bottom.YouHe} {bottom.youVerb('feel')} the heat of {top.yourHis} paw against "+ bottom_yoursHis +".",
+				"{bottom.YouHe} {bottom.youHeVerb('feel')} the heat of {top.yourHis} paw against "+ bottom_yoursHis +".",
 			])
 
 	return flavorLines
 
 func getFlavorLinesForCurrentSexPose_topGettingClose() -> Array:
 	var flavorLines = [
-		"{top.YouHe} {top.youVerb('feel')} very close.",
-		"{top.YouHe} {top.youAre} on the very edge.",
-		"{top.YouHe} {top.youAre} nearing {top.yourHis} orgasm.",
-		"{top.YouHe} {top.youVerb('close')} in on {top.yourHis} orgasm.",
+		"{top.YouHe} {top.youHeVerb('feel')} very close.",
+		"{top.YouHe} {top.youAreHeIs} on the very edge.",
+		"{top.YouHe} {top.youAreHeIs} nearing {top.yourHis} orgasm.",
+		"{top.YouHe} {top.youHeVerb('close')} in on {top.yourHis} orgasm.",
 	]
 
 	return flavorLines
 
 func getFlavorLinesForCurrentSexPose_topAboutToCum() -> Array:
 	var flavorLines = [
-		"{top.YouHe} {top.youAre} about to cum!",
+		"{top.YouHe} {top.youAreHeIs} about to cum!",
 	]
 
 	return flavorLines
 
 func getFlavorLinesForCurrentSexPose_bottomGettingClose() -> Array:
 	var flavorLines = [
-		"{bottom.YouHe} {bottom.youAre} approaching a point where it's very difficult to prevent {bottom.yourself} from cumming.",
-		"{bottom.YouHe} {bottom.youVerb('look')} like {bottom.youHe} wouldn't be able to hold off finishing for much longer.",
-		"{bottom.YouHe} {bottom.youAre} moments away from spilling {bottom.yourHis} seed all over.",
-		"{bottom.YouHe} {bottom.youVerb('feel')} that {bottom.youHe} {bottom.youAre} at {bottom.yourHis} very peak.",
+		"{bottom.YouHe} {bottom.youAreHeIs} approaching a point where it's very difficult to prevent {bottom.yourselfThemself} from cumming.",
+		"{bottom.YouHe} {bottom.youHeVerb('look')} like {bottom.youHe} wouldn't be able to hold off finishing for much longer.",
+		"{bottom.YouHe} {bottom.youAreHeIs} moments away from spilling {bottom.yourHis} seed all over.",
+		"{bottom.YouHe} {bottom.youHeVerb('feel')} that {bottom.youHe} {bottom.youAreHeIs} at {bottom.yourHis} very peak.",
 	]
 
 	return flavorLines
@@ -3078,13 +3073,13 @@ func getFlavorLinesForCurrentSexPose_bottomCame() -> Array:
 	var cumming_where = "everywhere"
 
 	if("bottomCumsOverSelf" in currentSexPose.tags):
-		cumming_where = "all over {bottom.yourself}"
+		cumming_where = "all over {bottom.yourselfThemself}"
 	elif("bottomFacingTop" in currentSexPose.tags):
 		cumming_where = "all over {top.you}"
 
 	flavorLines.append_array([
-		"{bottom.YouHe} {bottom.youAre} unable to hold it any longer, cumming "+ cumming_where + ".",
-		"{bottom.YouHe} cannot stop {bottom.yourself} from cumming "+ cumming_where + ".",
+		"{bottom.YouHe} {bottom.youAreHeIs} unable to hold it any longer, cumming "+ cumming_where + ".",
+		"{bottom.YouHe} cannot stop {bottom.yourselfThemself} from cumming "+ cumming_where + ".",
 	])
 
 	return flavorLines
@@ -4344,11 +4339,6 @@ func afterSexEnded() -> void:
 			if( character.isPlayer() ):
 				character.addStamina( character.getBuffsHolder().getCustom(BuffAttribute.StaminaRecoverAfterSex) )
 				character.addSkillExperience(Skill.SexSlave, 30)
-
-		if( !character.isPlayer() ):
-			character.addLust(-character.getLust())
-			character.addPain(-character.getPain())
-			character.addStamina(character.getMaxStamina())
 
 		character.setArousal(0.0)
 

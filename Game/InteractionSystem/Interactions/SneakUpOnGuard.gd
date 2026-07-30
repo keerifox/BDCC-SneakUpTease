@@ -11,7 +11,7 @@ func start(_pawns:Dictionary, _args:Dictionary):
 func init_text():
 	var possible = [
 		"{guard.You} {guard.youAre} facing the other way, not noticing {inmate.name} in an off-limits area.",
-		"{guard.You} {guard.youVerb('seem')} distracted. {inmate.You} might avoid being seen in an off-limits area if {inmate.youHe} {inmate.youVerb('keep')} quiet.",
+		"{guard.You} {guard.youVerb('seem')} distracted. {inmate.You} might avoid being seen in an off-limits area if {inmate.youHe} {inmate.youHeVerb('keep')} quiet.",
 	]
 	
 	if( isInmateWearingStaffUniform() ):
@@ -60,7 +60,7 @@ func sneaked_up_on_text():
 		"Get your fucking hands off me.",
 		"You have absolutely no clue who you're messing with.",
 		"I guess you want to be one of those who'll find out the hard way..",
-		"You can still let me go, [i]before[/i] I make an example out of you.",
+		"You can still let me go, *before* I make an example out of you.",
 		"This area is off-limits for you, and so is my body."
 	]
 
@@ -112,9 +112,9 @@ func sneaked_up_on_text():
 
 		possible.append_array([
 			"You have a strong grip. However, with that thing on your neck, you're only one codeword away from being incapacitated. I have a stronger grip on you. Remember that.",
-			"You're directly in the view of the security camera I've just finished fixing. There are a lot of eyes on you right now, so you may [i]really[/i] want to reconsider.",
+			"You're directly in the view of the security camera I've just finished fixing. There are a lot of eyes on you right now, so you may *really* want to reconsider.",
 			"I've seen you approach on the proximity scanner, so I'm sorry to break it to you – you're not catching me by surprise. It indicated you as a pink dot though, either this prototype needs further tweaking, or you must be pretty handful for a complete slut.",
-			"I'm honestly unsure if I'm more upset about the proximity sensor not going off, or that I have to deal with direct consequences of that.",
+			"I'm honestly unsure if I'm more upset about the proximity sensor not going off, or that I have to deal with the direct consequences of that.",
 			"For the millionth time, there are no games on my datapad.",
 			"I could fix you~",
 		])
