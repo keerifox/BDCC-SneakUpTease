@@ -1,28 +1,109 @@
 extends PawnInteractionBase
 
+var subIsLookingForTrouble:bool = false
+
 func _init():
 	id = "SneakUpOnInmate"
 
 func start(_pawns:Dictionary, _args:Dictionary):
 	doInvolvePawn("dom", _pawns["dom"])
 	doInvolvePawn("sub", _pawns["sub"])
+
+	if( _args.has("subIsLookingForTrouble") && _args["subIsLookingForTrouble"] ):
+		subIsLookingForTrouble = true
+
 	setState("", "dom")
 
 func init_text():
 	var sub = getRoleChar("sub")
+	var subPawn = getRolePawn("sub")
+
+	var subPersonalityMeanScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean:bool = subPersonalityMeanScore > 0.4
 
 	var possible:Array = [
-		"{sub.You} {sub.youVerb('hear')} the faint sound of footsteps.",
 		"For a moment, {sub.you} {sub.youVerb('zone')} out, no longer paying attention to {sub.yourHis} surroundings.",
-		"As the ambient sounds blend together, a certain thud-like noise stands out from the chaotic harmony, becoming more and more apparent. Footsteps! Behind y-",
-		"{sub.Your} senses sharpen as {sub.youHe} {sub.youHeVerb('notice')} certain sounds quickly form a worrying pattern. Jagged noises are becoming louder and louder. Footsteps. On your six-",
 	]
 
-	if( !sub.isBlindfolded() ):
-		# Uses sight
+	if(subIsLookingForTrouble):
 		possible.append_array([
-			"From the corner of {sub.your} eye, {sub.youHe} {sub.youHeVerb('notice')} someone's shadow creeping about.",
+			(
+					"{sub.You} {sub.youVerb('lean')} over something, allowing {sub.yourselfHimself} to relax. "
+				+ (
+						"With a blindfold on"
+					if( sub.isBlindfolded() )
+					else "With eyes closed"
+				)
+				+ ", arms vulnerably "
+				+ (
+						"bound"
+					if( sub.hasBoundArms() )
+					else "resting"
+				)
+				+ " behind {sub.yourHis} spine, and {sub.yourHis} rear raised just a little, it's hard to tell if {sub.youreTheyre} purposely this alluring. "
+				+ (
+						"{sub.You} seductively {sub.youVerb('sway')} {sub.yourHis} tail upwards. Any remaining doubts of the critters observing {sub.youHim} were substituted by a needy excess of saliva in their maws.."
+					if(
+							sub.bodypartHasTrait(BodypartSlot.Tail, PartTrait.TailFlexible)
+						&& RNG.chance(70)
+					)
+					else "{sub.YouHe} {sub.youHeVerb('emit')} a quiet moan that is sure to sway the figure next to {sub.youHim} intimately closer.."
+				)
+			),
+			(
+					"{sub.You} purposely {sub.youVerb('bump')} into someone, as if "
+				+ (
+						"trying to start a fight. They either had no interest in putting {sub.you} in {sub.yourHis} place, or were really good at avoiding conflict, which.. truthfully, in this particular case, did not *need* to happen."
+					if( RNG.chance( 70 if(subIsMean) else 30 ) )
+					else "looking to get {sub.yourselfHimself} in trouble. They asked {sub.you} to be more careful, disappearing into a small crowd before {sub.youHe} could yap anything in return."
+				)
+				+ " {sub.You} stood confused, now with nobody else in sight."
+				+ "\n\n"
+				+ "A critter was quietly observing {sub.youHim} do this more than once, sometimes reacting with an inaudible giggle, often resting their muzzle on own paws. Eventually, it decided to narrow the distance between."
+			),
+			(
+					"{sub.You} {sub.youVerb('stretch', 'stretches')} a little. In the process, both {sub.yourHis} bones and {sub.yourHis} muscles feel much more at ease.. It is quite pleasing. {sub.YouHe} {sub.youHeVerb('stretch', 'stretches')} a little more. No longer as focused on {sub.yourHis} sensations, {sub.youHe} {sub.youHeVerb('notice')} just how much {sub.yourHis} motions highlight {sub.yourHis} curves and soft spots, "
+				+ (
+						"which appear even more luscious with no clothing being in the way."
+					if( sub.isFullyNaked() )
+					else "sometimes even exposing the areas that {sub.yourHis} clothes could not stretch enough to cover."
+				)
+				+ "\n\n"
+				+ "There are at least two critters unable to keep their eyes away from {sub.you}.. Encouraging their arousal was already in {sub.your} plans, but as their gaze explores {sub.your} body, {sub.youHe} {sub.youHeVerb('begin')} to crave the touch of their paws, too. Huff.. {sub.YouHe} {sub.youHeVerb('perform')} a particularly naughty, teasing stretch, welcoming paws as they gently reach out."
+			),
+			(
+					"{sub.You} {sub.youVerb('stand')} amidst everything, bending over to adore an element of the environment. The subject of {sub.yourHis} captivation is always something different. Seeing {sub.youHim} so excited does not draw out the attention of only the most preoccupied bystanders. Everyone else seems to share {sub.yourHis} appreciation! Sometimes even exceeding that of {sub.yoursHis}. Other times, their focus slowly drifts towards {sub.yourHis} inviting figure.."
+				+ "\n\n"
+				+ "When it comes to the creature slowly sneaking up on {sub.you} from behind, it's not that {sub.you} {sub.youHavent} reignited their interest in whatever {sub.youreTheyre} observing, but it appears that they'll get to appreciate it much more, closely pressed into {sub.youHim}, as {sub.youHe} {sub.youHeVerb('remain')} standing alluringly bent over,,"
+			),
+			"Being sneaked up on by a critter overwhelmed with horny thoughts is not a problem {sub.you}'d mind right now.. {sub.YouHe} {sub.youDoHeDoes} {sub.yourHis} best to provoke that~",
 		])
+
+		if( sub.getSkillLevel(Skill.Exhibitionism) >= 5 ):
+			possible.append_array([
+				(
+						"{sub.You} {sub.youVerb('roam')} around, "
+					+ (
+							"teasingly sliding {sub.yourHis} clothes just enough to expose the curves of {sub.yourHis} soft butt, swaying about in everyone's view. {sub.YouHe}'d then slide {sub.yourHis} bottomwear back up, and wander off a little further away, only to repeat the act, with each try {sub.yourHis} moves becoming significantly hotter.."
+						if( sub.isBodypartCovered(BodypartSlot.Anus) )
+						else "teasingly swaying {sub.yourHis} soft butt at every corner, with even the most subby bystanders' faces slowly painting with blush."
+					)
+					+ " It's clear {sub.youre} *looking* for trouble, though, of a more playful definition of the term. It does not take long until someone does bite,,"
+				)
+			])
+	else:
+		possible.append_array([
+			"{sub.You} {sub.youVerb('hear')} the faint sound of footsteps.",
+			"As the ambient sounds blend together, a certain thud-like noise stands out from the chaotic harmony, becoming more and more apparent. Footsteps! Behind y-",
+			"{sub.Your} senses sharpen as {sub.youHe} {sub.youHeVerb('notice')} certain sounds quickly form a worrying pattern. Jagged noises are becoming louder and louder. Footsteps. On {sub.yourHis} six-",
+			"The ambient sounds all seem drowned out. No matter how focused, {sub.your} ears are unable to detect any threat, but something is.. not quite right.. Without any sound, {sub.youreTheyre} suddenly tackled from behind.",
+		])
+
+		if( !sub.isBlindfolded() ):
+			# Uses sight
+			possible.append_array([
+				"From the corner of {sub.your} eye, {sub.youHe} {sub.youHeVerb('notice')} someone's shadow creeping about.",
+			])
 
 	saynn( RNG.pick(possible) )
 
@@ -38,6 +119,7 @@ func sneaked_up_on_text():
 	var domPawn = getRolePawn("dom")
 	var subPawn = getRolePawn("sub")
 
+	var someone_You:String = "You" if( dom.isPlayer() ) else "Someone"
 	var someone_you:String = "you" if( dom.isPlayer() ) else "someone"
 	var someone_YouThey:String = "You" if( dom.isPlayer() ) else "They"
 	var someone_youThey:String = "you" if( dom.isPlayer() ) else "they"
@@ -51,12 +133,21 @@ func sneaked_up_on_text():
 	var both_You_veThey_ve:String = "You've" if( isPlayerInvolved() ) else "They've"
 	var both_youThese:String = "you" if( isPlayerInvolved() ) else "these"
 
-	var possible:Array = [
-		"Before {sub.youHe} {sub.youHeVerb('know')} it, "+ someone_you +" "+ someone_youVerb_grab +" {sub.youHim} from behind, strongly gripping {sub.yourHis} wrists.",
-		"Before {sub.youHe} {sub.youHeVerb('get')} a chance to react, {sub.youHe} {sub.youAreHeIs} grabbed from behind.",
-		"Before {sub.youHe} {sub.youHaveHeHas} a chance to react, "+ someone_you +" "+ someone_youVerb_swipe +" at you, grabbing both of {sub.yourHis} wrists.",
-		"{sub.You} {sub.youWere} about to turn around, but "+ someone_you +" immediately {dom.youVerb('shove')} into {sub.youHim}, grabbing both of {sub.yourHis} wrists.",
-	]
+	var possible:Array = []
+
+	if(subIsLookingForTrouble):
+		possible.append_array([
+			( someone_You +" "+ someone_youVerb_grab +" both of {sub.yourHis} wrists, as "+ someone_youThey +" tackle lightly into {sub.youHim}." ),
+			( someone_You +" "+ someone_youVerb_grab +" {sub.youHim} from behind, tightly gripping {sub.yourHis} wrists." ),
+			"{sub.YouHe} {sub.youAreHeIs} playfully grabbed from behind.",
+		])
+	else:
+		possible.append_array([
+			"Before {sub.youHe} {sub.youHeVerb('get')} a chance to react, {sub.youHe} {sub.youAreHeIs} grabbed from behind.",
+			( "Before {sub.youHe} {sub.youHaveHeHas} a chance to react, "+ someone_you +" "+ someone_youVerb_swipe +" at you, grabbing both of {sub.yourHis} wrists." ),
+			( "Before {sub.youHe} {sub.youHeVerb('know')} it, "+ someone_you +" "+ someone_youVerb_grab +" {sub.youHim} from behind, strongly gripping {sub.yourHis} wrists." ),
+			( "{sub.You} {sub.youWere} about to turn around, but "+ someone_you +" immediately {dom.youVerb('shove')} into {sub.youHim}, grabbing both of {sub.yourHis} wrists." ),
+		])
 
 	saynn( RNG.pick(possible) )
 
@@ -72,12 +163,25 @@ func sneaked_up_on_text():
 	var affectionValue:float = subPawn.getAffection(domPawn)
 	var chanceToIdentifyDom:float = 40.0 + 40.0 * abs(affectionValue)
 
-	var genericUnclearIntentionsEnding = RNG.pick([
-		( "What is it that "+ someone_youThey +" want from {sub.youHim}?" ),
-		( "What are "+ someone_yourTheir +" intentions with {sub.youHim}?" ),
-		( "{sub.YouHaveHeHas} {sub.youHe} done something to upset "+ someone_youThem +"?" ),
-		( "What has gotten into "+ someone_youThem +"?" ),
-	])
+	var genericUnclearIntentionsEnding_variants:Array = []
+
+	if(subIsLookingForTrouble):
+		genericUnclearIntentionsEnding_variants.append_array([
+			( "Is it really surprising that {sub.youve} caught "+ someone_yourTheir +" attention?" ),
+			"It's exactly the attention you wanted.",
+			( "What {sub.youve} done earlier must've really piqued "+ someone_yourTheir +" interest.." ),
+			( "{sub.You} {sub.youVerb('wonder')} what "+ someone_youThey +" might have in store for {sub.youHim}.." ),
+			( "{sub.You} "+ RNG.pick(["{sub.youVerb('crave')}", "{sub.youVerb('want')}", "{sub.youVerb('wish')}"]) +" to learn more about "+ someone_youThem +".." ),
+		])
+	else:
+		genericUnclearIntentionsEnding_variants.append_array([
+			( "What is it that "+ someone_youThey +" want from {sub.youHim}?" ),
+			( "What are "+ someone_yourTheir +" intentions with {sub.youHim}?" ),
+			( "{sub.YouHaveHeHas} {sub.youHe} done something to upset "+ someone_youThem +"?" ),
+			( "What has gotten into "+ someone_youThem +"?" ),
+		])
+
+	var genericUnclearIntentionsEnding:String = RNG.pick(genericUnclearIntentionsEnding_variants)
 
 	possible = []
 
@@ -101,15 +205,20 @@ func sneaked_up_on_text():
 				+ " "
 				+ RNG.pick([
 					"an ally",
+					"an associate",
 					"a follower",
 					"a friend",
 					"a lilac",
 					"a lover",
+					"a mutual",
 				])
 				+ "? "
 				+ RNG.pick([
 					"A bully",
 					"A guard",
+					"A nuisance",
+					"A snitch",
+					"A thief",
 					"A traitor",
 				])
 				+ "? {sub.YouHe} {sub.youAreHeIs} unable to tell."
@@ -139,7 +248,7 @@ func sneaked_up_on_text():
 			])
 
 		possible.append_array([
-			( someone_YouThey +" carry a familiar scent, but {sub.your} mind immediately flags it as a threat, causing {sub.youHim} to feel even more alerted."+ optionalEnding ),
+			( someone_YouThey +" carry a familiar scent, but {sub.your} mind immediately flags it as a threat, causing {sub.youHim} to feel "+ ( "alert" if(subIsLookingForTrouble) else "even more alert" ) +"."+ optionalEnding ),
 		])
 	elif( affectionValue < 0 ):
 		var optionalEnding:String = ""
@@ -177,6 +286,7 @@ func sneaked_up_on_text():
 		if( dom.isPlayerOwner() ):
 			necessaryEnding_variants.append_array([
 				"{dom.YoureTheyre} {sub.yourHis} owner..",
+				"{dom.YouHe} {dom.youHeVerb('happen')} to be {sub.yourHis} owner..",
 			])
 		else:
 			necessaryEnding_variants.append_array([
@@ -186,20 +296,21 @@ func sneaked_up_on_text():
 
 			if( ( dom.getThickness() >= 0.70 ) || dom.isVisiblyPregnant() ):
 				necessaryEnding_variants.append_array([
-					( "{dom.YourHis} large "+( "impregnated " if( dom.isVisiblyPregnant() ) else "" )+"belly presses softly into {sub.you}, washing away any stress {sub.youHe} had left." ),
+					( "{dom.YourHis} large "+( "impregnated " if( dom.isVisiblyPregnant() ) else "" )+"belly presses softly into {sub.you}, washing away any "+ ( RNG.pick(["anxiety", "loneliness"]) if(subIsLookingForTrouble) else RNG.pick(["stress", "worries"]) ) +" {sub.youHe} had left." ),
 				])
 
-			if(!subIsDommy):
-				necessaryEnding_variants.append_array([
-					(
-							"{sub.You} might've subtly hinted earlier that it's something {sub.youHe}'d wish happened to {sub.youHim}.."
-						+ (
-								" It wasn't exactly subtle."
-							if( RNG.chance(10) )
-							else ""
-						)
-					),
-				])
+			if(!subIsLookingForTrouble):
+				if(!subIsDommy):
+					necessaryEnding_variants.append_array([
+						(
+								"{sub.You} might've subtly hinted earlier that it's something {sub.youHe}'d wish happened to {sub.youHim}.."
+							+ (
+									" It wasn't exactly subtle."
+								if( RNG.chance(10) )
+								else ""
+							)
+						),
+					])
 
 			if(!domIsMean):
 				necessaryEnding_variants.append_array([
@@ -264,6 +375,18 @@ func getPreviewLineForRole(_role:String) -> String:
 
 func shouldHideRelativeActionChances() -> bool:
 	return true
+
+func saveData():
+	var data = .saveData()
+
+	data["subIsLookingForTrouble"] = subIsLookingForTrouble
+
+	return data
+
+func loadData(_data):
+	.loadData(_data)
+
+	subIsLookingForTrouble = SAVE.loadVar(_data, "subIsLookingForTrouble", false)
 
 
 func getIncompleteSpeciesFullName(species: Array):
