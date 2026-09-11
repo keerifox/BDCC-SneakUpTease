@@ -11,6 +11,7 @@ var subPetNames:Array = ["creature"]
 var domWasUninterestedInSexEngineAction:bool = false
 var domIsBottoming:bool = false
 var domHasImmediatelyLeftConsentingSub:bool = false
+var domMayProgressSexPose:bool = false
 var domToggleableMouthPlayMightPerform:bool = false
 var domToggleableMouthPlayState:String = "none"
 var domToggleableMouthPlayActiveTurns:int = 0
@@ -33,6 +34,7 @@ var bottomWasLubedUp:bool = false
 var bottomCameThisTurn:bool = false
 var bottomCameTimes:int = 0
 
+var sexPoseIdHistory:Array = []
 var currentSexPoseId:String = "none"
 var currentTurnTopOrBottom:String = "nobody"
 var hasSexEndedEarly:bool = false
@@ -53,6 +55,10 @@ const ANAL_SEX_RECEIVING_POSE_MISSIONARY = {
 	tags = [
 		"bottomBelowTop", "bottomFacingTop", "unboundHandholding",
 	],
+	progression = {
+		poseId = "mating_press",
+		actionName = "Breed them",
+	},
 }
 const ANAL_SEX_RECEIVING_POSE_RAISED_LEG = {
 	id = "raised_leg",
@@ -243,6 +249,7 @@ func start(_pawns:Dictionary, _args:Dictionary):
 		getRoleChar("dom").setArousal(0.0)
 		getRoleChar("sub").setArousal(0.0)
 
+	domMayProgressSexPose = RNG.chance(50)
 	domToggleableMouthPlayMightPerform = RNG.chance(50)
 	subMightEndSexEarly = RNG.chance(1)
 
@@ -367,6 +374,8 @@ func dom_choosing_sex_pose_do(_id:String, _args:Dictionary, _context:Dictionary)
 			if( _id == ("select_sex_pose_" + availablePose.id) ):
 				currentSexPoseId = availablePose.id
 
+	sexPoseIdHistory.append(currentSexPoseId)
+
 	if(stateIdSuffix == "_done"):
 		incl_pre_getting_into_pose_do()
 
@@ -404,6 +413,7 @@ func dom_choosing_sex_pose_preview_do(_id:String, _args:Dictionary, _context:Dic
 		setState("dom_choosing_sex_pose_done", "dom")
 	elif(_id == "no"):
 		currentSexPoseId = "none"
+		sexPoseIdHistory.clear()
 		setState("dom_choosing_sex_pose", "dom")
 
 
@@ -625,6 +635,25 @@ func sex_top_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 
 		bottom.addLust( -int( bottom.getLust() * 0.5 ) )
 		bottom.setArousal(0.0)
+
+
+func dom_progressed_sex_pose_text():
+	var eventLines:Array = getEventLinesForCurrentSexPose_progressedIntoPose()
+
+	if( eventLines.size() > 0 ):
+		var eventLine:String = RNG.pick(eventLines)
+		saynn(eventLine)
+
+	addAction("continue", "Hhhhf..", "This is a lot..", "default", 1.0, 60, {})
+
+func dom_progressed_sex_pose_do(_id:String, _args:Dictionary, _context:Dictionary):
+	if(_id == "continue"):
+		var nextTurnTopOrBottom:String = "top" if(domIsBottoming) else "bottom"
+
+		increaseArousal({ nextTurnTopOrBottom = nextTurnTopOrBottom, })
+
+		currentTurnTopOrBottom = nextTurnTopOrBottom
+		setState("sex_"+ nextTurnTopOrBottom +"_turn", "sub")
 
 
 func confirming_whether_to_end_sex_text():
@@ -1558,12 +1587,16 @@ func incl_sex_turn_text():
 	if(isDomTurn && topCameThisTurn):
 		addAction("continue", "Keep going", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
-		var endSexProbability = max( ( -0.75 + ( 0.35 * topCameTimes ) ), 0.0 )
+		var domHasUsedSexPoseProgression:bool = ( sexPoseIdHistory.size() >= 2 )
+		var topCameTimesModifier:int = -2 if(domHasUsedSexPoseProgression) else 0
+		var endSexProbability:float = max( ( -0.75 + ( 0.35 * (topCameTimes + topCameTimesModifier) ) ), 0.0 )
 		addAction("had_enough_sex", "End sex", "Enough fun for now.", "default", endSexProbability, 0, {})
 	else:
 		addAction("continue", "Continue", "Just continue doing what you're doing.", "default", 1.0, 60, {})
 
 		incl_toggleable_mouth_play_actions()
+
+		incl_sex_pose_progression_actions()
 
 		var endSexEarlyProbability = 1.0 if( !isDomTurn && subMightEndSexEarly && RNG.chance(1) ) else -0.01
 		addAction("end_sex_early", "End sex", "You no longer want this to continue.", "default", endSexEarlyProbability, 0, {})
@@ -1669,6 +1702,11 @@ func incl_sex_turn_do_preTick(_id:String):
 func incl_sex_turn_do(_id:String, _args:Dictionary, _context:Dictionary):
 	var top = getTopChar()
 	var bottom = getBottomChar()
+
+	var hasUsedSexPoseProgression:bool = incl_sex_pose_progression_do(_id, _args, _context)
+
+	if(hasUsedSexPoseProgression):
+		return
 
 	var nextTurnTopOrBottom = ( "top" if(currentTurnTopOrBottom == "bottom") else "bottom" )
 	
@@ -1908,6 +1946,62 @@ func incl_toggleable_mouth_play_do(_id:String, _args:Dictionary, _context:Dictio
 		var painInflictedFromBite = 6 if(subIsMean) else 2
 		dom.addPain(painInflictedFromBite)
 
+func incl_sex_pose_progression_actions():
+	var domTopOrBottomString = "bottom" if(domIsBottoming) else "top"
+	var isDomTurn:bool = (currentTurnTopOrBottom == domTopOrBottomString)
+
+	if( !isDomTurn || (topCameTimes < 1) ):
+		return
+
+	var currentSexPose = getCurrentSexPose()
+
+	if( (currentSexPose == null) || !currentSexPose.has("progression") ):
+		return
+
+	var sexPoseProgressionParams:Dictionary = currentSexPose.progression
+
+	var progressionSexPose = getSexPoseById(sexPoseProgressionParams.poseId)
+
+	if(progressionSexPose == null):
+		return
+
+	if( !getAnimationIsFast() ):
+		return
+
+	var unmetRequirements:Array = getSexPoseUnmetRequirements(progressionSexPose)
+
+	if( unmetRequirements.size() >= 1 ):
+		return
+
+	var minArousalModifier:float = 0.15
+
+	var progressSexPoseProbability:float = (
+			( 40.0 if(topCameTimes < 2) else 80.0 )
+		if( domMayProgressSexPose && !getAnimationIsFast(minArousalModifier) )
+		else 0.0
+	)
+
+	addAction( ("sex_pose_progression_towards_" + progressionSexPose.id), ( "» "+ sexPoseProgressionParams.actionName ), ( "Progress into the \""+ progressionSexPose.name +"\" position." ), "default", progressSexPoseProbability, 60, {} )
+
+func incl_sex_pose_progression_do(_id:String, _args:Dictionary, _context:Dictionary) -> bool:
+	var hasUsedSexPoseProgression:bool = false
+	var SEX_POSE_PROGRESSION_PREFIX:String = "sex_pose_progression_towards_"
+
+	var sub = getRoleChar("sub")
+
+	if( !_id.begins_with(SEX_POSE_PROGRESSION_PREFIX) ):
+		hasUsedSexPoseProgression = false
+		return hasUsedSexPoseProgression
+
+	currentSexPoseId = _id.trim_prefix(SEX_POSE_PROGRESSION_PREFIX)
+	sexPoseIdHistory.append(currentSexPoseId)
+	sub.addConsciousness(-0.15)
+	setState("dom_progressed_sex_pose", "sub")
+
+	hasUsedSexPoseProgression = true
+	return hasUsedSexPoseProgression
+
+
 
 func getAnimData() -> Array:
 	if( getState() == "dom_left_sub_alone" ):
@@ -1994,11 +2088,8 @@ func getAnimData() -> Array:
 		if( getState() in TEASE_STATES ):
 			return [currentSexPose.stageScene, "tease", { pc=pc, npc=npc, bodyState=pcBodyState, npcBodyState=npcBodyState }]
 
-		if( getState() in ["sex_bottom_turn", "sex_top_turn", "confirming_whether_to_end_sex"] ):
-			var top = getTopChar()
-
-			var fastAnimationMinArousal:float = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
-			var animationName:String = "fast" if( top.getArousal() >= fastAnimationMinArousal ) else "sex"
+		if( getState() in ["sex_bottom_turn", "sex_top_turn", "dom_progressed_sex_pose", "confirming_whether_to_end_sex"] ):
+			var animationName:String = "fast" if( getAnimationIsFast() ) else "sex"
 
 			if(topCameInsideThisTurn):
 				animationName = "inside"
@@ -2117,6 +2208,7 @@ func saveData():
 	data["domWasUninterestedInSexEngineAction"] = domWasUninterestedInSexEngineAction
 	data["domIsBottoming"] = domIsBottoming
 	data["domHasImmediatelyLeftConsentingSub"] = domHasImmediatelyLeftConsentingSub
+	data["domMayProgressSexPose"] = domMayProgressSexPose
 	data["domToggleableMouthPlayMightPerform"] = domToggleableMouthPlayMightPerform
 	data["domToggleableMouthPlayState"] = domToggleableMouthPlayState
 	data["domToggleableMouthPlayActiveTurns"] = domToggleableMouthPlayActiveTurns
@@ -2129,6 +2221,7 @@ func saveData():
 	data["domLeashedWalkTraversedCellsCount"] = domLeashedWalkTraversedCellsCount
 	data["domLeashedWalkTargetLoc"] = domLeashedWalkTargetLoc
 
+	data["sexPoseIdHistory"] = sexPoseIdHistory
 	data["currentSexPoseId"] = currentSexPoseId
 	data["currentTurnTopOrBottom"] = currentTurnTopOrBottom
 	data["hasSexEndedEarly"] = hasSexEndedEarly
@@ -2160,6 +2253,7 @@ func loadData(_data):
 	domWasUninterestedInSexEngineAction = SAVE.loadVar(_data, "domWasUninterestedInSexEngineAction", false)
 	domIsBottoming = SAVE.loadVar(_data, "domIsBottoming", false)
 	domHasImmediatelyLeftConsentingSub = SAVE.loadVar(_data, "domHasImmediatelyLeftConsentingSub", false)
+	domMayProgressSexPose = SAVE.loadVar(_data, "domMayProgressSexPose", false)
 	domToggleableMouthPlayMightPerform = SAVE.loadVar(_data, "domToggleableMouthPlayMightPerform", false)
 	domToggleableMouthPlayState = SAVE.loadVar(_data, "domToggleableMouthPlayState", "none")
 	domToggleableMouthPlayActiveTurns = SAVE.loadVar(_data, "domToggleableMouthPlayActiveTurns", 0)
@@ -2172,6 +2266,7 @@ func loadData(_data):
 	domLeashedWalkTraversedCellsCount = SAVE.loadVar(_data, "domLeashedWalkTraversedCellsCount", 0)
 	domLeashedWalkTargetLoc = SAVE.loadVar(_data, "domLeashedWalkTargetLoc", "")
 
+	sexPoseIdHistory = SAVE.loadVar(_data, "sexPoseIdHistory", [])
 	currentSexPoseId = SAVE.loadVar(_data, "currentSexPoseId", "none")
 	currentTurnTopOrBottom = SAVE.loadVar(_data, "currentTurnTopOrBottom", "nobody")
 	hasSexEndedEarly = SAVE.loadVar(_data, "hasSexEndedEarly", false)
@@ -2186,6 +2281,9 @@ func loadData(_data):
 	bottomWasLubedUp = SAVE.loadVar(_data, "bottomWasLubedUp", false)
 	bottomCameThisTurn = SAVE.loadVar(_data, "bottomCameThisTurn", false)
 	bottomCameTimes = SAVE.loadVar(_data, "bottomCameTimes", 0)
+
+	if( ( sexPoseIdHistory.size() == 0 ) && (currentSexPoseId != "none") ):
+		sexPoseIdHistory = [currentSexPoseId]
 
 func getTopRole():
 	return ( "sub" if(domIsBottoming) else "dom" )
@@ -2271,6 +2369,7 @@ func increaseArousal(_info:Dictionary):
 
 	var top = getTopChar()
 	var bottom = getBottomChar()
+	var sub = ( top if(domIsBottoming) else bottom )
 	var topPawn = getTopPawn()
 	var bottomPawn = getBottomPawn()
 
@@ -2296,6 +2395,12 @@ func increaseArousal(_info:Dictionary):
 	elif(nextTurnTopOrBottom == "top"):
 		if( bottom.getArousal() >= 1.0 ):
 			bottom.setArousal( min( lerp(bottomArousalBeforeIncrease, 1.0, 0.5), 0.994 ) )
+
+	if( getAnimationIsFast() ):
+		if( ( sub.getConsciousness() < 0.90 ) && ( sexPoseIdHistory.size() >= 2 ) ):
+			sub.addConsciousness(-0.01)
+	else:
+		sub.addConsciousness(0.02)
 
 func handleTransformation(_info:Dictionary):
 	var tfRequiresEndingInteraction:bool = false
@@ -2349,13 +2454,16 @@ func getRelevantSexPoses():
 
 	return ANAL_SEX_RECEIVING_STANDING_POSES.duplicate()
 
-func getCurrentSexPose():
+func getSexPoseById(poseId:String):
 	for posesArray in SEX_POSE_ARRAYS:
 		for availablePose in posesArray:
-			if(availablePose.id == currentSexPoseId):
+			if(availablePose.id == poseId):
 				return availablePose
 
 	return null
+
+func getCurrentSexPose():
+	return getSexPoseById(currentSexPoseId)
 
 func getSexPoseUnmetRequirements(pose) -> Array:
 	var unmetRequirements = []
@@ -2415,6 +2523,22 @@ func getSexPoseActionDescPrefix(pose) -> String:
 		actionDescPrefix = "[Strength "+ str(sexPoseStrengthStatRequirement) +"+] "
 
 	return actionDescPrefix
+
+func getAnimationIsFast(minArousalModifier:float = 0.0) -> bool:
+	var isAnimationFast:bool = false
+
+	var top = getTopChar()
+
+	var currentSexPose = getCurrentSexPose()
+
+	if(currentSexPose == null):
+		isAnimationFast = false
+		return isAnimationFast
+
+	var fastAnimationMinArousal:float = currentSexPose.fastAnimationMinArousal if( currentSexPose.has("fastAnimationMinArousal") ) else 0.70
+
+	isAnimationFast = ( top.getArousal() >= (fastAnimationMinArousal + minArousalModifier) )
+	return isAnimationFast
 
 # For some creatures this will be incorrect, sorry..
 func getBoyBoun(characterRole:String) -> String:
@@ -2777,6 +2901,39 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 		"{dom.You} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" intimately close to {sub.your} "+ bottom_drippy_stretched_wide_anus +"."
 	]
 
+func getEventLinesForCurrentSexPose_progressedIntoPose() -> Array:
+	var eventLines:Array = []
+
+	var sub = getRoleChar("sub")
+
+	var top_penis = getTopPenisDesc()
+	var both_YouThey:String = ( "You" if( isPlayerInvolved() ) else "They" )
+	var both_youThem:String = ( "you" if( isPlayerInvolved() ) else "them" )
+	var both_yourTheir:String = ( "your" if( isPlayerInvolved() ) else "their" )
+
+	var progressionId = sexPoseIdHistory[-2] + " -> " + sexPoseIdHistory[-1]
+
+	if(progressionId == "missionary -> mating_press"):
+		eventLines.append_array([
+			(
+					( "{dom.You} {dom.youVerb('pound')} {sub.you} needily, the rate of {dom.yourHis} thrusts is becoming more and more uneven and animalistic, the immense strength causes {sub.youHim} to throb and squirm with each push that sends {dom.yourHis} "+ top_penis +" reaching deep at {sub.yourHis} most sensitive spot." )
+				+ "\n\n"
+				+ ( both_YouThey + " already feel at "+ both_yourTheir +" peak pleasure, but then {dom.you} greedily {dom.youVerb('grab')} at {sub.your} thighs, bending them inwards, and continuing with profound lust and delirium {sub.youHe} didn't think {dom.youHe} had in {dom.youHim}. " )
+				+ (
+						"F- Fuckhff.."
+					if( sub.isPlayer() )
+					else "{sub.YoureTheyre} taking {dom.you} so well.."
+				)
+			),
+			(
+					( "All varieties of emotions rush through "+ both_youThem +" as {dom.your} paws roam through {sub.your} soft, luscious curves, and {dom.yourHis} whole body pins {sub.youHim} down, needily thrusting into {sub.youHim} again and again.." )
+				+ "\n\n"
+				+ "{sub.You} {sub.youVerb('notice')} {sub.yourHis} legs being forcibly folded back, {sub.yourHis} squeaks becoming more desperate, as {dom.you} {dom.youVerb('continue')} squeezing the most pleasure out of {sub.youHim}, feeling renewed strength from realizing just how much more tempting {sub.youHe} {sub.youAreHeIs} in a mating press position."
+			),
+		])
+
+	return eventLines
+
 func getEventLinesForCurrentSexPose_applyingLube() -> Array:
 	var sub = getRoleChar("sub")
 
@@ -3095,6 +3252,8 @@ func getFlavorLinesForCurrentSexPose_bottomGettingClose() -> Array:
 		"{bottom.YouHe} {bottom.youHeVerb('look')} like {bottom.youHe} wouldn't be able to hold off finishing for much longer.",
 		"{bottom.YouHe} {bottom.youAreHeIs} moments away from spilling {bottom.yourHis} seed all over.",
 		"{bottom.YouHe} {bottom.youHeVerb('feel')} that {bottom.youHe} {bottom.youAreHeIs} at {bottom.yourHis} very peak.",
+		"{bottom.YoureTheyre} nearing a point where things around {bottom.youHim} are about to become painted with {bottom.yourHis} naughty fluids.",
+		"At this rate, {bottom.youHe} wouldn't be able to last much longer.",
 	]
 
 	return flavorLines
