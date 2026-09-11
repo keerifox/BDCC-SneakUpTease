@@ -303,7 +303,15 @@ func dom_choosing_sex_pose_text():
 	
 	if(domIsBottoming):
 		possible.append_array([
-			"{dom.You} {dom.youVerb('reach', 'reaches')} around, cravingly teasing {sub.your} "+ getTopPenisDesc() +" while deciding on a pose to take {sub.youHim} in.",
+			(
+					"{sub.You} {sub.youVerb('allow')} {dom.your} paw to stray a little farther, and {dom.youHe} cravingly {dom.youHeVerb('tease')} {sub.yourHis} "+ getTopPenisDesc() +", "
+				+ RNG.pick([
+					"only slightly touching it",
+					"slowly playing around its tip",
+					"touching it ever so slightly",
+				])
+				+ ", while deciding on a pose to take {sub.youHim} in."
+			),
 		])
 	else:
 		possible.append_array([
@@ -1993,6 +2001,9 @@ func getAnimData() -> Array:
 
 	if(subWasPinnedToTheGround):
 		return [StageScene.SexBehind, "tease", { pc="dom", npc="sub" }]
+
+	if( domIsBottoming && ( getState() == "dom_choosing_sex_pose" ) ):
+		return [StageScene.GropeBehind, "stroke", { pc="sub", npc="dom" }]
 
 	var shouldBrushPawsAcrossTorso:bool = (
 			(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving) 
