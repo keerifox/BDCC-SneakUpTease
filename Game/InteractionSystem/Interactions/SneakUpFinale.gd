@@ -866,7 +866,7 @@ func dom_choosing_parting_action_text():
 		])
 	else:
 		possible.append_array([
-			"{dom.You} {dom.youVerb('keep')} a tight grip on {sub.your} wrists, while thinking what to do with {sub.youHim}.",
+			"{dom.You} {dom.youVerb('keep')} {sub.you} in a tight, soft hold, while thinking what to do with {sub.youHim}.",
 		])
 
 	saynn(RNG.pick(possible))
@@ -1994,7 +1994,16 @@ func getAnimData() -> Array:
 	if(subWasPinnedToTheGround):
 		return [StageScene.SexBehind, "tease", { pc="dom", npc="sub" }]
 
-	return [StageScene.SexFreeStanding, "tease", { pc="dom", npc="sub" }]
+	var shouldBrushPawsAcrossTorso:bool = (
+			(subConsentedToAnalSexReceiving || subConsentedToAnalSexGiving) 
+		&& ( getState() != "dom_choosing_parting_action" )
+	)
+
+	return [
+		StageScene.GropeBehind,
+		( "grope" if(shouldBrushPawsAcrossTorso) else "idle" ),
+		{ pc="sub", npc="dom" }
+	]
 
 func getActivityIconForRole(_role:String):
 	if( ( getState() in ["dom_stopped_messy_kissing_sub"] ) && (_role == "sub") ):
