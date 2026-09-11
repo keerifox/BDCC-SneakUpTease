@@ -5890,7 +5890,7 @@ func getPetNames(_petInfo:Dictionary) -> Array:
 				possiblePetNames.append_array(["catboy"])
 
 	if( possiblePetNames.size() < 1 ):
-		possiblePetNames.append_array(["creature", "pet"])
+		possiblePetNames.append_array(["creature", "critter", "pet"])
 
 	return possiblePetNames
 

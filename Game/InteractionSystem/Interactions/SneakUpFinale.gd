@@ -200,6 +200,14 @@ const ANAL_SEX_GIVING_POSES = [
 			"bottomFacingTop",
 		],
 	},
+	{
+		id = "straddle",
+		name = "Straddle",
+		stageScene = StageScene.SexCowgirlStraddle,
+		tags = [
+			"bottomFacingTop",
+		],
+	},
 ]
 
 var SEX_POSE_ARRAYS = [
@@ -2535,6 +2543,8 @@ func getPoseDescForCurrentSexPose() -> String:
 		return "in a reverse cowgirl position"
 	if(currentSexPose.id == "lotus"):
 		return "in a lotus position"
+	if(currentSexPose.id == "straddle"):
+		return "in a straddle position"
 
 	return "[color=red]FIX DESCRIPTOR[/color]"
 
@@ -2742,6 +2752,27 @@ func getEventLinesForCurrentSexPose_gettingIntoPose() -> Array:
 
 		return eventLines
 
+	if(currentSexPose.id == "straddle"):
+		return [
+			( "{dom.You} "+ dom_gently +" {dom.youVerb('lower')} {sub.you} into a sitting pose, positioning {dom.yourHis} thighs above {sub.yoursHis}, wrapping legs around {sub.yourHis} spine. {sub.YourHis} "+ top_penis +" throbs with excitement within {dom.yourHis} paw, as {dom.youHe} {dom.youHeVerb('align')} it with {dom.yourHis} "+ bottom_drippy_stretched_wide_anus +"." ),
+			(
+					domCommandingToGetIntoPose
+				+ "{sub.You} sat down on the ground"
+				+ (
+						" with slight reluctance"
+					if(subIsDommy)
+					else (
+							", motioning flauntingly"
+						if(!subIsSubby)
+						else " with great obedience"
+					)
+				)
+				+ ", and {dom.you} "+ dom_gently +" mounted around {sub.youHim}, legs intertwining, {dom.yourHis} paw possessively "
+				+ RNG.pick(["clinging", "grabbing"])
+				+ " at {sub.yourHis} neck."
+			),
+		]
+
 	return [
 		"{dom.You} {dom.youVerb('position')} {dom.yourHis} "+ top_penis +" intimately close to {sub.your} "+ bottom_drippy_stretched_wide_anus +"."
 	]
@@ -2896,14 +2927,16 @@ func getBaseLinesForCurrentSexPose_fucking() -> Array:
 	var sexPoseDesc = getPoseDescForCurrentSexPose()
 
 	if(domIsBottoming):
+		var verb_riding:String = "riding"
+
 		return [
-			"{bottom.You} {bottom.youAre} riding {top.you} "+ sexPoseDesc +"."
+			( "{bottom.You} {bottom.youAre} "+ verb_riding +" {top.you} "+ sexPoseDesc +"." )
 		]
 
-	var verb_fucking = RNG.pick(["fucking", "pounding"])
+	var verb_fucking:String = RNG.pick(["fucking", "pounding"])
 
 	return [
-		"{top.You} {top.youAre} "+ verb_fucking +" {bottom.you} "+ sexPoseDesc +"."
+		( "{top.You} {top.youAre} "+ verb_fucking +" {bottom.you} "+ sexPoseDesc +"." )
 	]
 
 func getBaseLinesForCurrentSexPose_beingFucked() -> Array:
@@ -3217,7 +3250,7 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 			dialogueLines.append_array([
 				"On your back.",
 			])
-	elif(currentSexPose.id == "lotus"):
+	elif( currentSexPose.id in ["lotus", "straddle"] ):
 		dialogueLines.append_array([
 			"Sit, like a good "+ RNG.pick(subPetNames) +" you are.",
 		])
@@ -3231,6 +3264,17 @@ func getDialogueLines_commandIntoPose(_dom:BaseCharacter) -> Array:
 			dialogueLines.append_array([
 				"Sit!",
 			])
+
+		if(currentSexPose.id == "straddle"):
+			dialogueLines.append_array([
+				"Lower yourself to the ground. These thighs are eager to wrap around you~",
+				( "Sit down, "+ RNG.pick(subPetNames) +". I'm about to straddle you good~" ),
+			])
+
+			if(!domIsDommy):
+				dialogueLines.append_array([
+					"Ready to become my straddling toy?",
+				])
 
 	return dialogueLines
 
