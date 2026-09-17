@@ -157,6 +157,10 @@ const ANAL_SEX_RECEIVING_PINNED_POSES = [
 		tags = [
 			"bottomUnboundArmsSupportingChest",
 		],
+		progression = {
+			poseId = "low_doggy",
+			actionName = "Pin down",
+		},
 	},
 	{
 		id = "low_doggy",
@@ -2913,7 +2917,12 @@ func getEventLinesForCurrentSexPose_progressedIntoPose() -> Array:
 
 	var progressionId = sexPoseIdHistory[-2] + " -> " + sexPoseIdHistory[-1]
 
-	if(progressionId == "missionary -> mating_press"):
+	if(progressionId == "all_fours -> low_doggy"):
+		eventLines.append_array([
+			"{dom.You} absolutely {dom.youVerb('love')} fucking {sub.you} on all fours, but {dom.youHe} can't help but pin {sub.yourHis} upper body into the floor. Seeing {sub.yourHis} spine curved alluringly, in a way that leaves {sub.yourHis} irresistible butt protruded upwards, invigorates {dom.youHim} to a tremendous extent. {dom.YouHe} can no longer focus on anything except needily fucking {sub.youHim} in this pose for hours on end.",
+			( "In the spur of the moment, {dom.you} {dom.youVerb('press', 'presses')} {sub.your} spine into the ground, giving in to own cravings, and beginning to pound {sub.youHim} with much more neediness. {dom.YourHis} paw keeps {sub.youHim} pinned where {sub.youHe} {sub.youHeVerb('belong')}, while {dom.yourHis} "+ top_penis +" shoves deep into {sub.yourHis} tailhole, eagerly squeezing between {sub.yourHis} walls with each plap. {sub.YourHis} knees tremble, but {sub.youreTheyre} loving every second of it." ),
+		])
+	elif(progressionId == "missionary -> mating_press"):
 		eventLines.append_array([
 			(
 					( "{dom.You} {dom.youVerb('pound')} {sub.you} needily, the rate of {dom.yourHis} thrusts is becoming more and more uneven and animalistic, the immense strength causes {sub.youHim} to throb and squirm with each push that sends {dom.yourHis} "+ top_penis +" reaching deep at {sub.yourHis} most sensitive spot." )

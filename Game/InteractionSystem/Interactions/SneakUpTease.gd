@@ -5342,6 +5342,7 @@ func incl_dom_refuse_request_text(_info:Dictionary):
 				"I can't quite make out what you're saying.. Could you rephrase?",
 				"Um.. I cannot make heads or tails of what you just said.. Could you rephrase?",
 				"Huh? I didn't quite understand that, sorry.",
+				"Uh.. Could you repeat that?",
 			])
 	else:
 		if(domIsMean):
