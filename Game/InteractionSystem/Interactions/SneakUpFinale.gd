@@ -940,21 +940,21 @@ func dom_choosing_parting_action_text():
 
 	var isAtLeastOneActionAvailable = false
 
-	var domCuddlesProbability = max( (1.0 - 2.0 * domPersonalityMeanRatio), ( -0.01 if( !dom.isMuzzled() && !sub.isMuzzled() ) else 0.20 ) )
+	var domCuddlesProbability = max( (1.0 - 2.0 * domPersonalityMeanRatio), ( -0.01 if( !dom.isBitingBlocked() && !sub.isMuzzled() ) else 0.20 ) )
 	var domMessyKissesProbability = 1.0 - max(domCuddlesProbability, 0.0)
 	addAction("cuddles", "Cuddles", "Envelop them in a hug, before leaving.", "default", domCuddlesProbability, 60, {})
 	isAtLeastOneActionAvailable = true
 
 	var ACTION_NAME_MESSY_KISSES = "Messy kisses"
-	if( !dom.isMuzzled() && !sub.isMuzzled() ):
+	if( !dom.isBitingBlocked() && !sub.isMuzzled() ):
 		addAction("messy_kisses", ACTION_NAME_MESSY_KISSES, "Kiss them sloppily, before leaving.", "default", domMessyKissesProbability, 60, {})
 		isAtLeastOneActionAvailable = true
-	elif( dom.isMuzzled() && sub.isMuzzled() ):
-		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when both of you are muzzled.")
+	elif( dom.isBitingBlocked() && sub.isMuzzled() ):
+		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when they're muzzled, and you're either muzzled or gagged.")
 	elif( sub.isMuzzled() ):
-		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when they are muzzled.")
+		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when they're muzzled.")
 	else:
-		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when you are muzzled.")
+		addDisabledAction(ACTION_NAME_MESSY_KISSES, "Unable to do this when you're muzzled or gagged.")
 
 	var ACTION_NAME_RESTRAIN = "Restrain them"
 	if( sub.isGuard() && !sub.hasBoundArms() ):
@@ -981,7 +981,7 @@ func dom_choosing_parting_action_do(_id:String, _args:Dictionary, _context:Dicti
 	if(_id == "cuddles"):
 		setState("dom_cuddling_sub", "dom")
 	elif(_id == "messy_kisses"):
-		setState("dom_messy_kissing_sub", "dom")
+		setState("dom_about_to_messy_kiss_sub", "sub")
 	elif(_id == "cuff_sub"):
 		var subInventory = sub.getInventory()
 
@@ -1108,11 +1108,111 @@ func dom_cuddling_sub_do(_id:String, _args:Dictionary, _context:Dictionary):
 		setState("dom_left_sub_alone", "dom")
 
 
+func dom_about_to_messy_kiss_sub_text():
+	var dom = getRoleChar("dom")
+
+	var possible:Array = []
+
+	if(subWasPinnedToTheGround):
+		possible.append_array([
+			"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} spine, moving closer in, about to force a lustful, messy kiss onto {sub.yourHis} lips.",
+		])
+	else:
+		possible.append_array([
+			"{dom.You} {dom.youVerb('surge')} forward, pinning {sub.you} underneath, about to press {dom.yourHis} lips intimately close at {sub.yoursHis}, and deliver a sloppy, passionate kiss.",
+		])
+
+	saynn( RNG.pick(possible) )
+
+	var kissing_who:String = "creatures"
+	if( dom.getGender() == Gender.Other ):
+		kissing_who = "things"
+	elif( dom.heShe() == "she" ):
+		kissing_who = "girls"
+	elif( dom.heShe() == "he" ):
+		kissing_who = "boys"
+
+	addAction( "allow_kiss", "Allow them", ( "You like kissing "+ kissing_who +" don't you.." ), "default", 1.0, 60, {} )
+	addAction( "refuse_kiss", "Refuse kiss", ( "You don't want kisses from "+ dom.getName() +" this time." ), "default", -0.01, 60, {} )
+	
+func dom_about_to_messy_kiss_sub_do(_id:String, _args:Dictionary, _context:Dictionary):
+	if(_id == "allow_kiss"):
+		setState("dom_messy_kissing_sub", "dom")
+	elif(_id == "refuse_kiss"):
+		setState("sub_refused_messy_kisses", "dom")
+
+
+func sub_refused_messy_kisses_text():
+	var dom = getRoleChar("dom")
+	var sub = getRoleChar("sub")
+	var domPawn = getRolePawn("sub")
+
+	var domPersonalityMeanScore:float = domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var domIsMean:bool = domPersonalityMeanScore > 0.4
+
+	var both_yourTheir:String = "your" if( isPlayerInvolved() ) else "their"
+
+	var possible_part1:Array = []
+
+	if( sub.hasBoundArms() ):
+		possible_part1.append_array([
+			( "{sub.You} {sub.youVerb('roll')} onto {sub.yourHis} side, just as "+ both_yourTheir +" lips were about to touch. {sub.YouHe}'d rather not have {dom.you} kiss {sub.youHim} this time.." ),
+		])
+	else:
+		possible_part1.append_array([
+			"{sub.You} {sub.youVerb('put')} a paw between {sub.yourHis} and {dom.your} lips, preventing {dom.youHim} from kissing {sub.youHim}.",
+		])
+
+	var possible_part2:Array = []
+
+	if( !dom.isBlindfolded() && !sub.isBlindfolded() ):
+		possible_part2.append_array([
+			(
+					"{dom.YouHe} {dom.youHeVerb('sit')} next to {sub.youHim}, looking into {sub.yourHis} eyes for a little while. "
+				+ (
+						"{dom.YouHe} still {dom.youHeVerb('feel')} that {sub.youHe} {sub.youHeVerb('owe')} {dom.youHim} a kiss, but {dom.yourHis} mind switches to something else – seeing that {sub.youHe} {sub.youArentHeIsnt} interested in one, leaves no fun in it for {dom.youHim}."
+					if(domIsMean)
+					else "{dom.YouHe} still {dom.youHeVerb('hope')} to kiss {sub.youHim} one day, but {dom.youDoHeDoes} not push further, out of respect for {sub.yourHis} boundaries."
+				)
+			),
+		])
+
+	if( !dom.isBitingBlocked() ):
+		possible_part2.append_array([
+			(
+					"{dom.YouHe} {dom.youHeVerb('bite')} at {sub.yourHis} "
+				+ RNG.pick(["arm", "shoulder", "wrist"])
+				+ ", without letting {dom.yourHis} teeth sink in. {dom.YouHe} {dom.youHeVerb('feel')} a little "
+				+ RNG.pick(["disappointed", "sad", "unfulfilled"])
+				+ ", but {dom.youHeVerb('try', 'tries')} not to take it out on {sub.youHim}, beyond whatever that was.."
+			),
+		])
+
+	if( possible_part2.size() < 1 ):
+		possible_part2.append_array([
+			"{dom.YoureTheyre} still noticeably interested in {sub.youHim}, but {dom.youDoHeDoes} not force it.",
+		])
+
+	saynn( RNG.pick(possible_part1) +" "+ RNG.pick(possible_part2) )
+
+	addAction("continue", "Continue", "Just continue doing what you're doing.", "default", 1.0, 60, {})
+	
+func sub_refused_messy_kisses_do(_id:String, _args:Dictionary, _context:Dictionary):
+	if(_id == "continue"):
+		setState("dom_left_sub_alone", "dom")
+
+
 func dom_messy_kissing_sub_text():
 	var dom = getRoleChar("dom")
 	var sub = getRoleChar("sub")
+	var domPawn = getRolePawn("dom")
+	var subPawn = getRolePawn("sub")
 
-	var both_youThem = "you" if( isPlayerInvolved() ) else "them"
+	var subPersonalityMeanScore:float = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 })
+	var subIsMean:bool = subPersonalityMeanScore > 0.4
+	var subIsKind:bool = subPersonalityMeanScore < -0.4
+
+	var both_youThem:String = "you" if( isPlayerInvolved() ) else "them"
 
 	var possible:Array = []
 
@@ -1120,7 +1220,7 @@ func dom_messy_kissing_sub_text():
 		if(subWasPinnedToTheGround):
 			possible.append_array([
 				(
-						"{dom.You} {dom.youVerb('turn')} {sub.you} on {sub.yourHis} spine, moving closer in to force a lustful, messy kiss onto {sub.yourHis} lips. {dom.YouHe} {dom.youHeVerb('hold')} back every now and then, "
+						"{dom.YourHis} lips press intimately close to {sub.yoursHis}, tongues intertwining as {sub.you} {sub.youVerb('lay')} helpless underneath. {dom.You} {dom.youVerb('hold')} back every now and then, "
 					+ (
 							"to keep {sub.youHim} begging for more, as {dom.youHe} {dom.youHeVerb('leave')} trails"
 						if( dom.isBlindfolded() || sub.isBlindfolded() )
@@ -1136,7 +1236,7 @@ func dom_messy_kissing_sub_text():
 			])
 		else:
 			possible.append_array([
-				"{dom.You} {dom.youVerb('surge')} forward, pinning {sub.you} underneath and pressing {dom.yourHis} lips close to {sub.yoursHis}, to deliver a sloppy, passionate kiss. A plentiful of saliva is forced into {sub.yourHis} mouth, as {dom.your} paws roam all over, leaving {sub.youHim} no room to fight back.",
+				( "{sub.You} "+ RNG.pick(["cravingly", "helplessly"]) +" {sub.youVerb('meet')} {dom.your} lips with {sub.yoursHis}. A plentiful of saliva is forced into {sub.yourHis} mouth, as {dom.your} paws roam all over, leaving {sub.youHim} no room to fight back." ),
 			])
 
 		saynn( RNG.pick(possible) )
@@ -1153,14 +1253,75 @@ func dom_messy_kissing_sub_text():
 
 		saynn( RNG.pick(possible) )
 
-		if( (domMessyKissingLastedTurns > 3) && RNG.chance(20) ):
-			var soundsLen:int = RNG.randi_range(3, 6)
-			var sounds:String = "M"
-
-			for n in soundsLen:
-				sounds += RNG.pick(["f", "h", "m"])
+		if( (domMessyKissingLastedTurns > 3) && RNG.chance(25) ):
+			var sounds:String = RNG.pick([
+				( "M"+ generateRandomString({ dict = ["f", "h", "m"], range = [3, 6] }) ),
+				( "N"+ generateRandomString({ dict = ["h", "f", "m", "n"], range = [3, 6] }) ),
+			])
 
 			sounds += ".."
+
+			if( (domMessyKissingLastedTurns > 10) && RNG.chance(30) ):
+				var subSpecies = sub.getSpecies()
+				var affectionValue:float = subPawn.getAffection(domPawn)
+				var domCharacterTypeName = CharacterType.getName( dom.getCharacterType() )
+				var dom_Callname:String = ""
+				var dom_Callname_cutoffLen:int = -1
+
+				if( RNG.chance(40) ):
+					if(affectionValue >= 0.4):
+						dom_Callname = dom.getName()
+						dom_Callname_cutoffLen = 3
+					elif( dom.isLilac() ):
+						dom_Callname = "Lilac"
+						dom_Callname_cutoffLen = 2
+					elif( domCharacterTypeName in ["Inmate", "Guard", "Nurse", "Engineer"] ):
+						dom_Callname = domCharacterTypeName
+						dom_Callname_cutoffLen = RNG.randi_range(3, 4)
+					else:
+						dom_Callname = Util.capitalizeFirstLetter( getBoyBoun("dom") )
+						dom_Callname_cutoffLen = -1
+				else:
+					var randomCallnameSubstitutes:Array = [
+						( "Gosh" if(subIsKind) else "How" ),
+						( "Freak" if(subIsMean) else "Please" ),
+					]
+
+					var randomCallnameSubstitutes_vocalizations:Array = [
+						"Huff",
+					]
+
+					if( subSpecies.has(Species.Canine) ):
+						randomCallnameSubstitutes_vocalizations.append_array([
+							"Wruff",
+						])
+
+					if( subSpecies.has(Species.Feline) ):
+						randomCallnameSubstitutes_vocalizations.append_array([
+							"Meow",
+						])
+
+					randomCallnameSubstitutes.append( RNG.pick(randomCallnameSubstitutes_vocalizations) )
+
+					dom_Callname = RNG.pick(randomCallnameSubstitutes)
+					dom_Callname_cutoffLen = -1
+
+				var sounds_domCallname_possible:Array = [
+					dom_Callname + RNG.pick(["-", ".."]),
+					dom_Callname[0] + "- " + dom_Callname + "..",
+				]
+
+				if(dom_Callname_cutoffLen != -1):
+					sounds_domCallname_possible.append_array([
+						dom_Callname.substr(0, dom_Callname_cutoffLen) + "-..",
+					])
+
+				var sounds_domCallname:String = RNG.pick(sounds_domCallname_possible)
+
+				sounds = RNG.pick([
+					sounds_domCallname + " " + sounds,
+					sounds + " " + sounds_domCallname,
+				])
 
 			saynn("[say=sub]"+ sounds +"[/say]")
 
@@ -2039,7 +2200,7 @@ func getAnimData() -> Array:
 	if( getState() == "dom_cuddling_sub" ):
 		return [StageScene.Cuddling, "idle", { pc="dom", npc="sub" }]
 
-	if( getState() == "dom_messy_kissing_sub" ):
+	if( getState() in ["dom_about_to_messy_kiss_sub", "dom_messy_kissing_sub"] ):
 		return [StageScene.SexMatingPress, "tease", { pc="dom", npc="sub" }]
 
 	if(subWasCuffed):
@@ -2048,7 +2209,7 @@ func getAnimData() -> Array:
 		else:
 			return [StageScene.Duo, "stand", { pc="dom", npc="sub", npcAction="kneel", flipNPC=true }]
 
-	if( getState() == "dom_stopped_messy_kissing_sub" ):
+	if( getState() in ["sub_refused_messy_kisses", "dom_stopped_messy_kissing_sub"] ):
 		return [StageScene.GivingBirth, "idle", { pc="sub" }]
 
 	if( getState() == "dom_stopped_leash_walking_sub" ):
@@ -2148,7 +2309,7 @@ func getActivityIconForRole(_role:String):
 	if( subWasCuffed && (_role == "sub") ):
 		return RoomStuff.PawnActivity.Struggle
 
-	if( getState() in ["dom_left_sub_alone", "dom_stopped_messy_kissing_sub", "dom_cuffed_guard_sub", "dom_leash_walking_sub", "dom_stopped_leash_walking_sub"] ):
+	if( getState() in ["dom_left_sub_alone", "sub_refused_messy_kisses", "dom_stopped_messy_kissing_sub", "dom_cuffed_guard_sub", "dom_leash_walking_sub", "dom_stopped_leash_walking_sub"] ):
 		return RoomStuff.PawnActivity.None
 
 	return RoomStuff.PawnActivity.Sex
@@ -2577,15 +2738,15 @@ func getAnimationIsFast(minArousalModifier:float = 0.0) -> bool:
 func getBoyBoun(characterRole:String) -> String:
 	var character = getRoleChar(characterRole)
 
-	var boyNoun = (
+	var boyNoun:String = (
 			RNG.pick(["thing", "critter"])
 		if( character.getGender() == Gender.Other )
 		else (
 				RNG.pick(["boy", "girl"])
-			if ( character.heShe() == "they" )
+			if( character.heShe() == "they" )
 			else (
 					"girl"
-				if ( character.heShe() == "she" )
+				if( character.heShe() == "she" )
 				else "boy"
 			)
 		)
