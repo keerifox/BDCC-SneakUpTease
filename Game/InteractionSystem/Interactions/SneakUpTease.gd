@@ -364,12 +364,19 @@ func init_text():
 			addAction("remain_still", "Lay still", "Remain helplessly pinned down.", "default", 1.0, 60, {})
 
 	if(subResistedOrSoftenedTimes >= 5):
-		var wasClothingRemoved = (subWasUndressed || domWasUndressed)
-		var isAbleToRubInReturn = !subWasPinnedToTheGround
-		var haveRubbedDomButIntentWasUnclear = (subRubbedAgainstDomTimes == 1)
+		var wasClothingRemoved:bool = (subWasUndressed || domWasUndressed)
+		var isAbleToRubInReturn:bool = !subWasPinnedToTheGround
+		var haveRubbedDomButIntentWasUnclear:bool = (subRubbedAgainstDomTimes == 1)
 
 		var subInterestInAnalSexGiving:float = subPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
 		var subDislikesAnalSexGiving:bool = subInterestInAnalSexGiving <= -0.5
+
+		var subMayBegForAnalSexGiving:bool = (
+				domWasCaptivatedBySubPenis
+			&& !domRefusedAnalSexReceiving
+			&& !subDislikesAnalSexGiving
+			&& getSubAnalSexGivingPossible()
+		)
 
 		if(!subConsentedToUndressing):
 			var subRemoveClothesBegProbability = max( ( 1.0 * ( getSubLustRatio() - 0.50 ) ), -0.01 ) if(!haveRubbedDomButIntentWasUnclear || !isAbleToRubInReturn) else -0.01
@@ -385,7 +392,7 @@ func init_text():
 			if(domRefusedPenetrationRequestTimes > 0):
 				subAnalSexReceivingBegProbability = 2.0
 
-			if(domWasCaptivatedBySubPenis && !subDislikesAnalSexGiving):
+			if(subMayBegForAnalSexGiving):
 				subAnalSexGivingBegProbability = subAnalSexReceivingBegProbability
 				subAnalSexReceivingBegProbability = 0.2 * subAnalSexReceivingBegProbability
 
@@ -412,7 +419,7 @@ func init_text():
 				if(haveRubbedDomButIntentWasUnclear):
 					subRubAgainstDomProbability = 2.0
 
-				if(domWasCaptivatedBySubPenis && !subDislikesAnalSexGiving):
+				if(subMayBegForAnalSexGiving):
 					subRubAgainstDomProbability = 0.2 * subRubAgainstDomProbability
 
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
