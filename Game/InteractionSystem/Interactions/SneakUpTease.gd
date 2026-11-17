@@ -366,7 +366,7 @@ func init_text():
 	if(subResistedOrSoftenedTimes >= 5):
 		var wasClothingRemoved:bool = (subWasUndressed || domWasUndressed)
 		var isAbleToRubInReturn:bool = !subWasPinnedToTheGround
-		var haveRubbedDomButIntentWasUnclear:bool = (subRubbedAgainstDomTimes == 1)
+		var haveRubbedDomButIntentWasUnclear:bool = (subRubbedAgainstDomTimes == 1) && !subConsentedToUndressing
 
 		var subInterestInAnalSexGiving:float = subPawn.scoreFetishMax({ Fetish.AnalSexGiving: 1.0 })
 		var subDislikesAnalSexGiving:bool = subInterestInAnalSexGiving <= -0.5
