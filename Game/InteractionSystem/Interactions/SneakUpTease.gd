@@ -772,7 +772,7 @@ func incl_after_sub_resisted_or_softened_text():
 
 	if(!subWasPinnedToTheGround):
 		if(!domEasedGripOnce && !subConsentedToUndressing):
-			var domEaseGripProbability = 0.1 if ( !domIsMean && (subResistedOrSoftenedTimes >= 2) && (subResistedTimes <= 6) && RNG.chance(20) ) else -0.01
+			var domEaseGripProbability = 0.1 if( !domIsMean && (subResistedOrSoftenedTimes >= 2) && (subResistedTimes <= 6) && RNG.chance(20) ) else -0.01
 			addAction("ease_grip", "Ease your grip", "Allow them to break free.", "default", domEaseGripProbability, 60, {})
 	else:
 		addAction("just_leave", "Leave", "You don't feel like doing anything with them.", "default", -0.01, 60, {})
@@ -1128,7 +1128,7 @@ func begged_for_anal_sex_receiving_text():
 	if(speechComprehensibility == "awful"):
 		if(subIsMean):
 			possible.append_array([
-				"Start penetrating my ring already, I have no interest in wasting personal leisure time for the likes of you.",
+				"Start penetrating my ring already, I have no interest in wasting personal leisure time on the likes of you.",
 				"What the fuck are you waiting for, the perfect time to insert your member was a good thirty minutes ago.",
 			])
 		else:
@@ -1159,13 +1159,13 @@ func begged_for_anal_sex_receiving_text():
 		else:
 			possible.append_array([
 				"Please f- fuck me.",
-				"I need you in me..",
-				"Please go ahead..",
+				"Huff.. I need you in me.. Please..",
+				"Please go ahead.. Huffh..",
 			])
 		
 		if(subIsSubby):
 			possible.append_array([
-				"I- I need you in me so bad..",
+				"Nnnh.. I need you in me so bad..",
 				"P- Please make me your personal fucktoy..",
 			])
 
@@ -1208,7 +1208,7 @@ func rubbed_against_dom_text():
 		])
 	elif(isConsentingToToAnalSexReceiving):
 		possible.append_array([
-			"{sub.You} [color="+ getSensationColor("comfort") +"]needily {sub.youVerb('rub')} {sub.yourHis} buttchecks against {dom.you}[/color], begging {dom.youHim} to enter {sub.youHim}. {sub.YouHe} {sub.youDoHeDoes} not let any words leave {sub.yourHis} mouth, delegating everything to the body language. Even so, {sub.yourHis} intent and desires are clear.",
+			"{sub.You} [color="+ getSensationColor("comfort") +"]needily {sub.youVerb('rub')} {sub.yourHis} buttchecks against {dom.you}[/color], begging {dom.youHim} to enter {sub.youHim}. {sub.YouHe} {sub.youDoHeDoes} not let any words part {sub.yourHis} lips, delegating everything to the body language. Even so, {sub.yourHis} intent and desires are clear.",
 			"{sub.You} [color="+ getSensationColor("comfort") +"]cravingly {sub.youVerb('brush', 'brushes')} {sub.yourHis} buttchecks against {dom.you}[/color], imploring {dom.youHim} to penetrate {sub.yourHis} hole. Despite no words having been exchanged, {sub.yourHis} motivation was conveyed well, leaving {dom.you} a little pent up in excitement.",
 		])
 	else:
@@ -1272,7 +1272,7 @@ func asked_for_something_else_text():
 		else:
 			if( !sub.isBlindfolded() && !dom.isBlindfolded() ):
 				possible.append_array([
-					"I've seen you staring~.. I'd love to watch your hips tremble as you're riding me.. If that's what you want, of course.",
+					"I've seen you staring~.. I'd love to watch your hips tremble as you're riding me.. If that's what you want, of course..",
 				])
 
 			if( !sub.isBlindfolded() ):
@@ -4731,7 +4731,7 @@ func incl_mod_setting_value_encounter_chance_text():
 					+ ( "%.3f" % (encounterChanceIncrementMillionth / 10000.0) )
 					+ "% / cell)"
 				)
-			if (encounterChanceIncrementMillionth > 0)
+			if(encounterChanceIncrementMillionth > 0)
 			else ""
 		)
 	)
@@ -4933,21 +4933,31 @@ func incl_post_dom_flirt_text():
 	var subPawn = getRolePawn("sub")
 
 	var domIsMean:bool = domPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 }) > 0.4
-	var domIsSubby:bool = domPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 }) > 0.4
+
+	var domPersonalitySubbyScore:float = domPawn.scorePersonalityMax({ PersonalityStat.Subby: 1.0 })
+	var domIsDommy:bool = domPersonalitySubbyScore < -0.4
+	var domIsSubby:bool = domPersonalitySubbyScore > 0.4
+
 	var domInterestInAnalSexReceiving:float = domPawn.scoreFetishMax({ Fetish.AnalSexReceiving: 1.0 })
+
 	var subIsMean:bool = subPawn.scorePersonalityMax({ PersonalityStat.Mean: 1.0 }) > 0.4
-	var subSpecies = sub.getSpecies()
 	var subIsInmate:bool = subPawn.isInmate()
 	var subHasBeenHighlyObedient = ( !subAttemptedPowerReversal && (subResistedTimes <= 1) && (subSoftenedTimes >= 6) )
-	var sub_handsome = "charming" if ( sub.heShe() == "they" ) else ( "pretty" if ( sub.heShe() == "she" ) else "handsome" )
+	var sub_handsome = "charming" if( sub.heShe() == "they" ) else ( "pretty" if( sub.heShe() == "she" ) else "handsome" )
+	var subLustRatio:float = getSubLustRatio()
+
+	var subSpecies = sub.getSpecies()
+	var sub_boy:String = getBoyBoun("sub")
+	var sub_puppy:String = RNG.pick( getPetNames({ species = subSpecies, heSheThey = sub.heShe() }) )
+	var sub_boy_or_puppy:String = ( sub_boy if( RNG.chance(65) ) else sub_puppy )
+
 	var affectionValue:float = domPawn.getAffection(subPawn)
 	var lustValue:float = domPawn.getLust(subPawn)
-	var subLustRatio:float = getSubLustRatio()
 
 	var DIALOGUE_I_DONT_BITE = "Don't worry, I don't bite~"
 	var DIALOGUE_GLAZED_DONUT = "We're not done until your cute butt looks like a glazed donut."
 
-	var possible = [
+	var possible:Array = [
 		"I'm not letting anyone else have you.",
 		"Nobody else can have you.. You're mine.",
 	]
@@ -4999,6 +5009,11 @@ func incl_post_dom_flirt_text():
 					"If you're at least half as good as your reputation, you might actually be worth my time.",
 				])
 
+		if( abs(affectionValue) > 0.20 ):
+			possible.append_array([
+				"I was not done with you earlier.",
+			])
+
 		if(affectionValue < -0.4):
 			possible.append_array([
 				"Told you that you shouldn't have crossed me.",
@@ -5031,6 +5046,7 @@ func incl_post_dom_flirt_text():
 		elif( abs(affectionValue) < 0.10 ):
 			possible.append_array([
 				"I would like to get to know you more.. Like, really get to know you..",
+				"I've heard how much you're into this~",
 			])
 		elif(affectionValue < -0.4):
 			possible.append_array([
@@ -5075,6 +5091,7 @@ func incl_post_dom_flirt_text():
 			"I can't seem to get enough of you..",
 			"I promise I have my reasons..",
 			"You're all I'm thinking about..",
+			"There are so many things I want to do to you..",
 		])
 
 	if(subResistedTimes < 4):
@@ -5093,14 +5110,12 @@ func incl_post_dom_flirt_text():
 				possible.append_array([
 					"What a good pet you are~",
 					"Aren't you an obedient little pet~",
-					"What a well-behaved "+ RNG.pick( getPetNames({ species = subSpecies, heSheThey = sub.heShe() }) ) + ".",
+					"What a well-behaved "+ sub_puppy + ".",
 				])
 
 				if( subSpecies.has(Species.Canine) ):
-					var sub_boy = "puppy" if ( sub.heShe() == "they" ) else ( "girl" if ( sub.heShe() == "she" ) else "boy" )
-
 					possible.append_array([
-						"Such a good "+ sub_boy + ".",
+						"Such a good "+ sub_boy_or_puppy + ".",
 						"You must be really craving for a bone..",
 					])
 
@@ -5117,7 +5132,7 @@ func incl_post_dom_flirt_text():
 	elif( !isSubWaitingOnDom() ):
 		# Resisted quite a few times by now, and isn't waiting on dom to act
 
-		if(affectionValue < -0.4):
+		if( (affectionValue < -0.4) && RNG.chance(20) ):
 			possible.append_array([
 				"Don't worry, I'm not here for revenge. You might've been a bitch to me, but I want you to get something good out of this too.",
 			])
@@ -5125,15 +5140,33 @@ func incl_post_dom_flirt_text():
 		if( domIsSubby && (domInterestInAnalSexReceiving >= 0.5) ):
 			possible.append_array([
 				"I wish I were in your place.. We're about to get to my favorite part~",
-				"I wouldn't resist if I were you. I don't mean that as a threat, it's just I'd *really* want to be buttfucked.",
+				"I'm surprised you resist so much.. I know I wouldn't be able to..",
 			])
+
+			if( RNG.chance(10) ):
+				possible.append_array([
+					"I wouldn't resist if I were you. I don't mean that as a threat, it's just I'd *really* want to be buttfucked.",
+				])
 
 		if(domIsMean):
 			possible.append_array([
 				"Quit being such a brat, we both know how bad you want it.",
-				"You won't be resisting much longer, I'll remind you who's bitch you really are.",
-				"Did you forget who you belong to? Stop being such a brat."
+				"You won't be resisting much longer, I'll remind you whose bitch you really are.",
+				"Did you forget who you belong to? Stop being such a brat.",
+				"There's something you owe me.",
+				"Going to keep playing hard to get?",
+				"You seem to have forgotten how this place works.",
+				"I've got you cornered, and I can tell you're into it~",
+				"Expecting help from people passing by? They want to see you pinned to the floor just as much as I do~",
+				"I won't do more than tease until you admit just how much you want it~",
+				"How does a mere toy like you feel about the fact I care what you want out of this?",
+				"Your struggling only arouses us both. Can't say I mind that~",
 			])
+
+			if(domIsDommy):
+				possible.append_array([
+					"You don't seem very obedient.. Mischievous brats that stumbled upon me now kneel after one mere command parting my lips. Not long until you'll want to~",
+				])
 		else:
 			possible.append_array([
 				( "I love watching you struggle~" if( !dom.isBlindfolded() ) else "I love it when you struggle~" ),
@@ -5143,9 +5176,23 @@ func incl_post_dom_flirt_text():
 				"I'll make it worth your time..",
 				"I really want you to stay..",
 				"I won't mistreat a cutie like you..",
+				"I know much hotter poses to hold you possessively in, all you have to do is ask~",
+				"Perhaps I should sloppy kiss you into submission~",
+				"A taste of my lips will make you behave~",
+				"There's no need to rush, I love playing with you like this~",
+				"I can be much more convincing~. I want to make sure you're comfortable.",
+				"I'm craving to explore your most kissable areas.. You'll make an exception for my lips, wouldn't you?",
+				"We're only playing, honey~. Unless.. you'd like to surrender more of your body to me?",
+				"I'll handle you with care~",
+				"I feel a little guilty taking advantage of you like this..",
 			])
 
-	var possibleRandomPick = RNG.pick(possible)
+			if(domIsDommy):
+				possible.append_array([
+					( "You certainly lack proper training.. No worries, I'll make a well-behaved "+ sub_puppy + " out of you in no time~" ),
+				])
+
+	var possibleRandomPick:String = RNG.pick(possible)
 
 	if(possibleRandomPick == DIALOGUE_GLAZED_DONUT):
 		domHasUsedFlirtLineByAlias["glazed_donut"] = true
@@ -5379,7 +5426,7 @@ func incl_dom_refuse_request_text(_info:Dictionary):
 			possible.append_array([
 				"Mmm.. I want to hear you say it again~",
 				"Sorry, I didn't quite catch that~",
-				"I love hearing those words.. I want to hear some more begging out of your lips~",
+				"I love hearing those words come out of your lips~. How about you beg a little more?~",
 				"..Sorry, I was distracted by your charming butt. Could you repeat?",
 				"That was a little too quiet for me, say it again?",
 			])
@@ -6920,10 +6967,10 @@ func getBoyBoun(characterRole:String) -> String:
 		if( character.getGender() == Gender.Other )
 		else (
 				RNG.pick(["boy", "girl"])
-			if ( character.heShe() == "they" )
+			if( character.heShe() == "they" )
 			else (
 					"girl"
-				if ( character.heShe() == "she" )
+				if( character.heShe() == "she" )
 				else "boy"
 			)
 		)
