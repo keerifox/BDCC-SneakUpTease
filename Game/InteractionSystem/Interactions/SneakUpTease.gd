@@ -384,17 +384,30 @@ func init_text():
 			if(domRefusedUndressingRequestTimes > 0):
 				subRemoveClothesBegProbability = 2.0
 
+			if(subRemoveClothesBegProbability > 0):
+				subRemoveClothesBegProbability += (
+						( 0.015 if(isAbleToRubInReturn) else 0.030 )
+					* subSoftenedTimes
+				)
+
 			addAction("beg_for_clothes_removal", "Beg: Feel them", "Beg them to get clothes out of the way.", "default", subRemoveClothesBegProbability, 60, {})
 		elif(wasClothingRemoved):
-			var subAnalSexReceivingBegProbability = max( ( 1.0 * ( getSubLustRatio() - 0.80 ) ), -0.01 )
-			var subAnalSexGivingBegProbability = -0.01 if( getSubAnalSexReceivingPossible() ) else subAnalSexReceivingBegProbability
+			var subAnalSexReceivingBegProbability:float = max( ( 1.0 * ( getSubLustRatio() - 0.80 ) ), -0.01 )
 
 			if(domRefusedPenetrationRequestTimes > 0):
 				subAnalSexReceivingBegProbability = 2.0
 
+			if(subAnalSexReceivingBegProbability > 0):
+				subAnalSexReceivingBegProbability += (
+						( 0.015 if(isAbleToRubInReturn) else 0.030 )
+					* subSoftenedTimes
+				)
+
+			var subAnalSexGivingBegProbability:float = -0.01 if( getSubAnalSexReceivingPossible() ) else subAnalSexReceivingBegProbability
+
 			if(subMayBegForAnalSexGiving):
 				subAnalSexGivingBegProbability = subAnalSexReceivingBegProbability
-				subAnalSexReceivingBegProbability = 0.2 * subAnalSexReceivingBegProbability
+				subAnalSexReceivingBegProbability *= 0.2
 
 			if( getSubAnalSexReceivingPossible() ):
 				addAction("beg_for_anal_sex_receiving", "Beg: Fuck me", "Beg them to penetrate your anal ring.", "default", subAnalSexReceivingBegProbability, 60, {})
@@ -419,8 +432,11 @@ func init_text():
 				if(haveRubbedDomButIntentWasUnclear):
 					subRubAgainstDomProbability = 2.0
 
+				if(subRubAgainstDomProbability > 0):
+					subRubAgainstDomProbability += (0.015 * subSoftenedTimes)
+
 				if(subMayBegForAnalSexGiving):
-					subRubAgainstDomProbability = 0.2 * subRubAgainstDomProbability
+					subRubAgainstDomProbability *= 0.2
 
 				addAction("rub_against_dom", "Rub in return", "Use body language to encourage them to be more greedy with you.", "default", subRubAgainstDomProbability, 60, {})
 	elif(subResistedOrSoftenedTimes >= 3):
